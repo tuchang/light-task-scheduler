@@ -12,13 +12,13 @@ LTS 轻量级分布式任务调度框架(Light Task Scheduler)
 
 支持任务类型:
 
-* 实时任务 
+* 实时任务
 * 也支持定时任务 (如：3天之后执行)
-* CronExpression (如:0 0/1 * * * ?) 
+* CronExpression (如:0 0/1 * * * ?)
 
 感兴趣，请加QQ群：109500214 一起探讨、完善。越多人支持，就越有动力去更新，喜欢记得右上角star哈。
 
-github地址:[https://github.com/qq254963746/light-task-scheduler](https://github.com/qq254963746/light-task-scheduler) 
+github地址:[https://github.com/qq254963746/light-task-scheduler](https://github.com/qq254963746/light-task-scheduler)
 
 ### 架构图
 
@@ -57,7 +57,7 @@ github地址:[https://github.com/qq254963746/light-task-scheduler](https://githu
 
 ### 日志记录
 
-对于任务的分发，执行，还有用户通过 (BizLogger)  【LtsLoggerFactory.getBizLogger()】 输入的业务日志，LTS都有记录，用户可以在LTS Admin 后台界面查看某个任务的所有日志，可以实时查看这个任务的执行情况。 
+对于任务的分发，执行，还有用户通过 (BizLogger)  【LtsLoggerFactory.getBizLogger()】 输入的业务日志，LTS都有记录，用户可以在LTS Admin 后台界面查看某个任务的所有日志，可以实时查看这个任务的执行情况。
 
 ### 开发计划：
 
@@ -82,7 +82,7 @@ github地址:[https://github.com/qq254963746/light-task-scheduler](https://githu
     // 1. 任务队列用mongo
     jobTracker.addConfig("job.queue", "mongo");
     // mongo 配置
-    jobTracker.addConfig("mongo.addresses", "127.0.0.1:27017"); 
+    jobTracker.addConfig("mongo.addresses", "127.0.0.1:27017");
     jobTracker.addConfig("mongo.database", "lts");
     jobTracker.setOldDataHandler(new OldDataDeletePolicy());
     // 启动节点
@@ -127,9 +127,6 @@ github地址:[https://github.com/qq254963746/light-task-scheduler](https://githu
     // job.setTriggerTime(new Date()); // 支持指定时间执行
     Response response = jobClient.submitJob(job);
 
-## 更新
+## TODO List
 
-1.5.4:
-
-1. 增加 lts-spring 工程对spring的支持 (见lts-example 中spring文件夹下的例子)
-2. 对于TaskTracker 同时支持 JobRunner 中 注解注入bean 和xml注入的方式
+- [ ] 使用JDK6，重写JDK7的NIO File。

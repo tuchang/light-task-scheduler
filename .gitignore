@@ -1,3 +1,13 @@
 *.iml
 .idea
 .DS_Store
+/lts-core/target
+/target
+/lts-jobtracker/target
+/lts-queue/target
+/lts-example/target
+/lts-logger/target
+/lts-spring/target
+/lts-admin/target
+/lts-jobclient/target
+/lts-tasktracker/target
