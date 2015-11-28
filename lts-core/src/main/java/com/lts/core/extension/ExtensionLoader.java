@@ -105,20 +105,6 @@ public class ExtensionLoader<T> {
         return cachedNames.get(extensionClass);
     }
 
-    private boolean isMatchGroup(String group, String[] groups) {
-        if (group == null || group.length() == 0) {
-            return true;
-        }
-        if (groups != null && groups.length > 0) {
-            for (String g : groups) {
-                if (group.equals(g)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
     /**
      * 返回扩展点实例，如果没有指定的扩展点或是还没加载（即实例化）则返回<code>null</code>。注意：此方法不会触发扩展点的加载。
      * <p/>
@@ -203,8 +189,8 @@ public class ExtensionLoader<T> {
     }
 
     public Set<String> getSupportedExtensions() {
-        Map<String, Class<?>> clazzes = getExtensionClasses();
-        return Collections.unmodifiableSet(new TreeSet<String>(clazzes.keySet()));
+        Map<String, Class<?>> classes = getExtensionClasses();
+        return Collections.unmodifiableSet(new TreeSet<String>(classes.keySet()));
     }
 
     /**
@@ -513,7 +499,7 @@ public class ExtensionLoader<T> {
         try {
             return injectExtension((T) getAdaptiveExtensionClass().newInstance());
         } catch (Exception e) {
-            throw new IllegalStateException("Can not create adaptive extenstion " + type + ", cause: " + e.getMessage(), e);
+            throw new IllegalStateException("Can not create adaptive extension " + type + ", cause: " + e.getMessage(), e);
         }
     }
 
@@ -533,7 +519,7 @@ public class ExtensionLoader<T> {
     }
 
     private String createAdaptiveExtensionClassCode() {
-        StringBuilder codeBuidler = new StringBuilder();
+        StringBuilder codeBuilder = new StringBuilder();
         Method[] methods = type.getMethods();
         boolean hasAdaptiveAnnotation = false;
         for (Method m : methods) {
@@ -546,9 +532,9 @@ public class ExtensionLoader<T> {
         if (!hasAdaptiveAnnotation)
             throw new IllegalStateException("No adaptive method on extension " + type.getName() + ", refuse to create the adaptive class!");
 
-        codeBuidler.append("package " + type.getPackage().getName() + ";");
-        codeBuidler.append("\nimport " + ExtensionLoader.class.getName() + ";");
-        codeBuidler.append("\npublic class " + type.getSimpleName() + "$Adpative" + " implements " + type.getCanonicalName() + " {");
+        codeBuilder.append("package " + type.getPackage().getName() + ";");
+        codeBuilder.append("\nimport " + ExtensionLoader.class.getName() + ";");
+        codeBuilder.append("\npublic class " + type.getSimpleName() + "$Adaptive" + " implements " + type.getCanonicalName() + " {");
 
         for (Method method : methods) {
             Class<?> rt = method.getReturnType();
@@ -674,34 +660,34 @@ public class ExtensionLoader<T> {
                 code.append(");");
             }
 
-            codeBuidler.append("\npublic " + rt.getCanonicalName() + " " + method.getName() + "(");
+            codeBuilder.append("\npublic " + rt.getCanonicalName() + " " + method.getName() + "(");
             for (int i = 0; i < pts.length; i++) {
                 if (i > 0) {
-                    codeBuidler.append(", ");
+                    codeBuilder.append(", ");
                 }
-                codeBuidler.append(pts[i].getCanonicalName());
-                codeBuidler.append(" ");
-                codeBuidler.append("arg" + i);
+                codeBuilder.append(pts[i].getCanonicalName());
+                codeBuilder.append(" ");
+                codeBuilder.append("arg" + i);
             }
-            codeBuidler.append(")");
+            codeBuilder.append(")");
             if (ets.length > 0) {
-                codeBuidler.append(" throws ");
+                codeBuilder.append(" throws ");
                 for (int i = 0; i < ets.length; i++) {
                     if (i > 0) {
-                        codeBuidler.append(", ");
+                        codeBuilder.append(", ");
                     }
-                    codeBuidler.append(pts[i].getCanonicalName());
+                    codeBuilder.append(pts[i].getCanonicalName());
                 }
             }
-            codeBuidler.append(" {");
-            codeBuidler.append(code.toString());
-            codeBuidler.append("\n}");
+            codeBuilder.append(" {");
+            codeBuilder.append(code.toString());
+            codeBuilder.append("\n}");
         }
-        codeBuidler.append("\n}");
+        codeBuilder.append("\n}");
         if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(codeBuidler.toString());
+            LOGGER.debug(codeBuilder.toString());
         }
-        return codeBuidler.toString();
+        return codeBuilder.toString();
     }
 
     private static ClassLoader findClassLoader() {

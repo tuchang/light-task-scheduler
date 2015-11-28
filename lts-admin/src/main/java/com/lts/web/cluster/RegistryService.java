@@ -1,23 +1,21 @@
 package com.lts.web.cluster;
 
-import com.lts.core.cluster.Config;
 import com.lts.core.cluster.Node;
-import com.lts.core.commons.collect.ConcurrentHashSet;
 import com.lts.core.commons.utils.CollectionUtils;
-import com.lts.core.commons.utils.StringUtils;
 import com.lts.core.registry.NotifyEvent;
 import com.lts.core.registry.NotifyListener;
 import com.lts.core.registry.Registry;
 import com.lts.core.registry.RegistryFactory;
+import com.lts.web.repository.domain.NodeOnOfflineLog;
+import com.lts.web.repository.mapper.NodeOnOfflineLogRepo;
+import com.lts.web.repository.memory.NodeMemoryDatabase;
 import com.lts.web.request.NodeRequest;
-import com.lts.web.support.AppConfigurer;
-import com.lts.web.repository.NodeMemoryRepository;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -26,23 +24,16 @@ import java.util.List;
 @Component
 public class RegistryService implements InitializingBean {
 
-    private final ConcurrentHashSet<String/*clusterName*/> MAP = new ConcurrentHashSet<String>();
-    private NodeMemoryRepository repo = new NodeMemoryRepository();
-
     @Autowired
-    @Qualifier("application")
+    NodeMemoryDatabase nodeMemoryDatabase;
+    @Autowired
     AdminApplication application;
+    @Autowired
+    NodeOnOfflineLogRepo nodeOnOfflineLogRepo;
 
-    public synchronized void register(String clusterName) {
+    private Registry registry;
 
-        if (MAP.contains(clusterName)) {
-            return;
-        }
-
-        Config config = application.getConfig();
-        config.setClusterName(clusterName);
-
-        Registry registry = RegistryFactory.getRegistry(config);
+    private void register() {
 
         registry.subscribe(application.getNode(), new NotifyListener() {
             @Override
@@ -52,34 +43,54 @@ public class RegistryService implements InitializingBean {
                 }
                 switch (event) {
                     case ADD:
-                        repo.addNode(nodes);
+                        nodeMemoryDatabase.addNode(nodes);
                         break;
                     case REMOVE:
-                        repo.removeNode(nodes);
+                        nodeMemoryDatabase.removeNode(nodes);
                         break;
                 }
+                // 记录日志
+                addLog(event, nodes);
             }
         });
-
-        MAP.add(clusterName);
     }
 
-    public List<String> getAllClusterNames() {
-        return new ArrayList<String>(MAP.list());
+    public List<Node> getOnlineNodes(NodeRequest request) {
+        return nodeMemoryDatabase.search(request);
     }
 
-    public List<Node> getNodes(NodeRequest request) {
-        return repo.search(request);
+    /**
+     * 记录节点上下线日志
+     */
+    private void addLog(NotifyEvent event, List<Node> nodes) {
+        List<NodeOnOfflineLog> logs = new ArrayList<NodeOnOfflineLog>(nodes.size());
+
+        for (Node node : nodes) {
+            NodeOnOfflineLog log = new NodeOnOfflineLog();
+            log.setLogTime(new Date());
+            log.setEvent(event == NotifyEvent.ADD ? "ONLINE" : "OFFLINE");
+
+            log.setClusterName(node.getClusterName());
+            log.setCreateTime(node.getCreateTime());
+            log.setGroup(node.getGroup());
+            log.setHostName(node.getHostName());
+            log.setIdentity(node.getIdentity());
+            log.setIp(node.getIp());
+            log.setPort(node.getPort());
+            log.setThreads(node.getThreads());
+            log.setNodeType(node.getNodeType());
+
+            logs.add(log);
+        }
+
+        nodeOnOfflineLogRepo.insert(logs);
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        String clusterNames = AppConfigurer.getProperties("clusterNames");
-        if (StringUtils.isNotEmpty(clusterNames)) {
-            String[] clusters = clusterNames.split(",");
-            for (String cluster : clusters) {
-                register(cluster.trim());
-            }
-        }
+
+        registry = RegistryFactory.getRegistry(application);
+
+        register();
     }
 }

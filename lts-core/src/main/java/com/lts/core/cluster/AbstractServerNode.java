@@ -4,15 +4,15 @@ import com.lts.core.Application;
 import com.lts.core.constant.Constants;
 import com.lts.core.factory.NamedThreadFactory;
 import com.lts.core.remoting.RemotingServerDelegate;
-import com.lts.remoting.netty.NettyRemotingServer;
-import com.lts.remoting.netty.NettyRequestProcessor;
-import com.lts.remoting.netty.NettyServerConfig;
+import com.lts.remoting.RemotingProcessor;
+import com.lts.remoting.RemotingServer;
+import com.lts.remoting.RemotingServerConfig;
 
 import java.util.concurrent.Executors;
 
 /**
  * @author Robert HG (254963746@qq.com) on 8/18/14.
- *         抽象 netty 服务端
+ *         抽象服务端
  */
 public abstract class AbstractServerNode<T extends Node, App extends Application> extends AbstractJobNode<T, App> {
 
@@ -20,15 +20,9 @@ public abstract class AbstractServerNode<T extends Node, App extends Application
 
     protected void remotingStart() {
 
-        NettyServerConfig nettyServerConfig = new NettyServerConfig();
-        // config 配置
-        nettyServerConfig.setListenPort(config.getListenPort());
-
-        remotingServer = new RemotingServerDelegate(new NettyRemotingServer(nettyServerConfig), application);
-
         remotingServer.start();
 
-        NettyRequestProcessor defaultProcessor = getDefaultProcessor();
+        RemotingProcessor defaultProcessor = getDefaultProcessor();
         if (defaultProcessor != null) {
             int processorSize = config.getParameter(Constants.PROCESSOR_THREAD, Constants.DEFAULT_PROCESSOR_THREAD);
             remotingServer.registerDefaultProcessor(defaultProcessor,
@@ -44,11 +38,52 @@ public abstract class AbstractServerNode<T extends Node, App extends Application
         remotingServer.shutdown();
     }
 
+    @Override
+    protected void beforeRemotingStart() {
+        RemotingServerConfig remotingServerConfig = new RemotingServerConfig();
+        // config 配置
+        if (config.getListenPort() == 0) {
+            config.setListenPort(Constants.JOB_TRACKER_DEFAULT_LISTEN_PORT);
+            node.setPort(config.getListenPort());
+        }
+        remotingServerConfig.setListenPort(config.getListenPort());
+
+        remotingServer = new RemotingServerDelegate(getRemotingServer(remotingServerConfig), application);
+
+        beforeStart();
+    }
+
+    private RemotingServer getRemotingServer(RemotingServerConfig remotingServerConfig) {
+        return remotingTransporter.getRemotingServer(config, remotingServerConfig);
+    }
+
+    @Override
+    protected void afterRemotingStart() {
+        afterStart();
+    }
+
+    @Override
+    protected void beforeRemotingStop() {
+        beforeStop();
+    }
+
+    @Override
+    protected void afterRemotingStop() {
+        afterStop();
+    }
+
     /**
      * 得到默认的处理器
-     *
-     * @return
      */
-    protected abstract NettyRequestProcessor getDefaultProcessor();
+    protected abstract RemotingProcessor getDefaultProcessor();
+
+    protected abstract void beforeStart();
+
+    protected abstract void afterStart();
+
+    protected abstract void afterStop();
+
+    protected abstract void beforeStop();
+
 
 }

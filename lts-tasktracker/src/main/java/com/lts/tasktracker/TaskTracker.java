@@ -1,10 +1,12 @@
 package com.lts.tasktracker;
 
 import com.lts.core.cluster.AbstractClientNode;
+import com.lts.core.constant.Constants;
 import com.lts.core.constant.Level;
-import com.lts.remoting.netty.NettyRequestProcessor;
+import com.lts.remoting.RemotingProcessor;
 import com.lts.tasktracker.domain.TaskTrackerApplication;
 import com.lts.tasktracker.domain.TaskTrackerNode;
+import com.lts.tasktracker.monitor.StopWorkingMonitor;
 import com.lts.tasktracker.monitor.TaskTrackerMonitor;
 import com.lts.tasktracker.processor.RemotingDispatcher;
 import com.lts.tasktracker.runner.JobRunner;
@@ -23,26 +25,35 @@ public class TaskTracker extends AbstractClientNode<TaskTrackerNode, TaskTracker
     }
 
     @Override
-    protected void preRemotingStart() {
+    protected void beforeStart() {
+        application.setRemotingClient(remotingClient);
         // 设置 线程池
         application.setRunnerPool(new RunnerPool(application));
         application.setJobPullMachine(new JobPullMachine(application));
+        application.setStopWorkingMonitor(new StopWorkingMonitor(application));
     }
 
     @Override
-    protected void afterRemotingStart() {
-        application.setRemotingClient(remotingClient);
+    protected void afterStart() {
         application.getMonitor().start();
+        if (config.getParameter(Constants.TASK_TRACKER_STOP_WORKING_SWITCH, false)) {
+            application.getStopWorkingMonitor().start();
+        }
     }
 
     @Override
-    protected void afterRemotingStop() {
+    protected void afterStop() {
         application.getMonitor().stop();
+        application.getStopWorkingMonitor().stop();
     }
 
     @Override
-    protected NettyRequestProcessor getDefaultProcessor() {
-        return new RemotingDispatcher(remotingClient, application);
+    protected void beforeStop() {
+    }
+
+    @Override
+    protected RemotingProcessor getDefaultProcessor() {
+        return new RemotingDispatcher(application);
     }
 
     public <JRC extends JobRunner> void setJobRunnerClass(Class<JRC> clazz) {

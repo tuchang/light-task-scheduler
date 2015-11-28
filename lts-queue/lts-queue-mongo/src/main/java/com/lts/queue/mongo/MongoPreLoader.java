@@ -27,7 +27,7 @@ public class MongoPreLoader extends AbstractPreLoader {
                 (AdvancedDatastore) DataStoreProvider.getDataStore(application.getConfig()));
     }
 
-    protected boolean lockJob(String taskTrackerNodeGroup, String jobId, String taskTrackerIdentity) {
+    protected boolean lockJob(String taskTrackerNodeGroup, String jobId, String taskTrackerIdentity, Long triggerTime, Long gmtModified) {
         UpdateOperations<JobPo> operations =
                 template.createUpdateOperations(JobPo.class)
                         .set("isRunning", true)
@@ -38,18 +38,20 @@ public class MongoPreLoader extends AbstractPreLoader {
 
         Query<JobPo> updateQuery = template.createQuery(tableName, JobPo.class);
         updateQuery.field("jobId").equal(jobId)
-                .field("isRunning").equal(false);
+                .field("isRunning").equal(false)
+                .field("triggerTime").equal(triggerTime)
+                .field("gmtModified").equal(gmtModified);
         UpdateResults updateResult = template.update(updateQuery, operations);
         return updateResult.getUpdatedCount() == 1;
     }
 
-    protected List<JobPo> load(String loadTaskTrackerNodeGroup, int offset) {
+    protected List<JobPo> load(String loadTaskTrackerNodeGroup, int loadSize) {
         // load
         String tableName = JobQueueUtils.getExecutableQueueName(loadTaskTrackerNodeGroup);
         Query<JobPo> query = template.createQuery(tableName, JobPo.class);
         query.field("isRunning").equal(false)
                 .filter("triggerTime < ", SystemClock.now())
-                .order(" triggerTime, priority , gmtCreated").offset(offset).limit(step);
+                .order(" triggerTime, priority , gmtCreated").offset(0).limit(loadSize);
         return query.asList();
     }
 

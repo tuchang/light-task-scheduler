@@ -2,10 +2,8 @@ package com.lts.queue.mysql;
 
 import com.lts.core.cluster.Config;
 import com.lts.core.commons.utils.CharacterUtils;
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
 import com.lts.core.commons.utils.StringUtils;
-import com.lts.web.request.JobQueueRequest;
-import com.lts.web.response.PageResponse;
 import com.lts.queue.JobQueue;
 import com.lts.queue.domain.JobPo;
 import com.lts.queue.exception.DuplicateJobException;
@@ -13,6 +11,8 @@ import com.lts.queue.exception.JobQueueException;
 import com.lts.queue.mysql.support.ResultSetHandlerHolder;
 import com.lts.store.jdbc.JdbcRepository;
 import com.lts.store.jdbc.SqlBuilder;
+import com.lts.web.request.JobQueueRequest;
+import com.lts.web.response.PageResponse;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -55,7 +55,7 @@ public abstract class AbstractMysqlJobQueue extends JdbcRepository implements Jo
                     jobPo.getGmtModified(),
                     jobPo.getSubmitNodeGroup(),
                     jobPo.getTaskTrackerNodeGroup(),
-                    JSONUtils.toJSONString(jobPo.getExtParams()),
+                    JSON.toJSONString(jobPo.getExtParams()),
                     jobPo.isRunning(),
                     jobPo.getTaskTrackerIdentity(),
                     jobPo.isNeedFeedback(),
@@ -108,7 +108,7 @@ public abstract class AbstractMysqlJobQueue extends JdbcRepository implements Jo
         SqlBuilder sql = new SqlBuilder("UPDATE " + getTableName(request));
         sql.addUpdateField("cron_expression", request.getCronExpression());
         sql.addUpdateField("need_feedback", request.getNeedFeedback());
-        sql.addUpdateField("ext_params", JSONUtils.toJSONString(request.getExtParams()));
+        sql.addUpdateField("ext_params", JSON.toJSONString(request.getExtParams()));
         sql.addUpdateField("trigger_time", request.getTriggerTime() == null ? null : request.getTriggerTime().getTime());
         sql.addUpdateField("priority", request.getPriority());
         sql.addUpdateField("submit_node_group", request.getSubmitNodeGroup());
@@ -116,8 +116,8 @@ public abstract class AbstractMysqlJobQueue extends JdbcRepository implements Jo
         sql.addCondition("job_id", request.getJobId());
 
         try {
-            getSqlTemplate().update(sql.getSQL(), sql.getParams().toArray());
-            return true;
+            int effectRows = getSqlTemplate().update(sql.getSQL(), sql.getParams().toArray());
+            return effectRows == 1;
         } catch (SQLException e) {
             throw new JobQueueException(e);
         }

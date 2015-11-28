@@ -1,7 +1,6 @@
 package com.lts.core.commons.utils;
 
 import com.esotericsoftware.reflectasm.MethodAccess;
-import com.lts.remoting.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -16,9 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BeanUtils {
 
-    private static final Map<Class, MethodAccess> METHOD_MAP = new ConcurrentHashMap<Class, MethodAccess>();
+    private static final Map<Class<?>, MethodAccess> METHOD_MAP = new ConcurrentHashMap<Class<?>, MethodAccess>();
     private static final Map<String, Integer> METHOD_INDEX_MAP = new ConcurrentHashMap<String, Integer>();
-    private static final Map<Class, List<String>> FIELD_MAP = new ConcurrentHashMap<Class, List<String>>();
+    private static final Map<Class<?>, List<String>> FIELD_MAP = new ConcurrentHashMap<Class<?>, List<String>>();
 
     public static void copyProperties(Object desc, Object src) {
 
@@ -74,7 +73,7 @@ public class BeanUtils {
     }
 
     public static String capitalize(String str) {
-        return new StringBuffer(str.length())
+        return new StringBuilder(str.length())
                 .append(Character.toTitleCase(str.charAt(0)))
                 .append(str.substring(1))
                 .toString();

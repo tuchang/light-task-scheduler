@@ -17,6 +17,11 @@ public interface ExecutableJobQueue extends JobQueue{
     boolean createQueue(String taskTrackerNodeGroup);
 
     /**
+     * 删除
+     */
+    boolean removeQueue(String taskTrackerNodeGroup);
+
+    /**
      * 入队列
      */
     boolean add(JobPo jobPo);
@@ -39,4 +44,9 @@ public interface ExecutableJobQueue extends JobQueue{
      * @return
      */
     List<JobPo> getDeadJob(String taskTrackerNodeGroup, long deadline);
+
+    /**
+     * 得到JobPo
+     */
+    JobPo getJob(String taskTrackerNodeGroup, String taskId);
 }

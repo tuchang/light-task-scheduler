@@ -1,33 +1,51 @@
 package com.lts.web.support;
 
-import java.util.*;
+import com.lts.core.commons.utils.StringUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * 系统的配置信息（lts-admin.cfg）
+ *
  * @author Robert HG (254963746@qq.com) on 5/11/15.
  */
 public class AppConfigurer {
 
     private static final Map<String, String> CONFIG = new HashMap<String, String>();
+    private static final String CONF_NAME = "lts-admin.cfg";
 
-    static {
+    private static AtomicBoolean load = new AtomicBoolean(false);
+
+    public static void load(String confPath) {
+        String path = "";
         try {
-            List<String> configList = new ArrayList<String>(2);
-            configList.add("lts-admin-config");
-            Locale locale = Locale.getDefault();
-            for (String config : configList) {
-                try {
-                    ResourceBundle localResource = ResourceBundle.getBundle(config, locale);
-                    for (Object o : localResource.keySet()) {
-                        String key = o.toString();
-                        String value = localResource.getString(key);
-                        CONFIG.put(key, value);
-                    }
-                } catch (MissingResourceException e) {
-                    // ignore
+            if (load.compareAndSet(false, true)) {
+                Properties conf = new Properties();
+
+                if (StringUtils.isNotEmpty(confPath)) {
+                    path = confPath + "/" + CONF_NAME;
+                    InputStream is = new FileInputStream(new File(path));
+                    conf.load(is);
+                } else {
+                    path = CONF_NAME;
+                    InputStream is = AppConfigurer.class.getClassLoader().getResourceAsStream(path);
+                    conf.load(is);
+                }
+
+                for (Map.Entry<Object, Object> entry : conf.entrySet()) {
+                    String key = entry.getKey().toString();
+                    String value = entry.getValue() == null ? null : entry.getValue().toString();
+                    CONFIG.put(key, value);
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Load config[" + path + "] error ", e);
         }
     }
 
@@ -35,39 +53,15 @@ public class AppConfigurer {
         return CONFIG;
     }
 
-    public static String getProperties(String name) {
+    public static String getProperty(String name) {
         return CONFIG.get(name);
     }
 
-    public static String getProperties(String name, String defaultValue) {
+    public static String getProperty(String name, String defaultValue) {
         String returnValue = CONFIG.get(name);
         if (returnValue == null || returnValue.equals("")) {
             returnValue = defaultValue;
         }
         return returnValue;
-    }
-
-    public static int getInteger(String name, int defaultValue) {
-        String returnValue = CONFIG.get(name);
-        if (returnValue == null || returnValue.equals("")) {
-            return defaultValue;
-        }
-        return Integer.parseInt(returnValue.trim());
-    }
-
-    public static int getInteger(String name) {
-        return Integer.parseInt(CONFIG.get(name));
-    }
-
-    public static boolean getBoolean(String name, boolean defaultValue) {
-        String returnValue = CONFIG.get(name);
-        if (returnValue == null || returnValue.equals("")) {
-            return defaultValue;
-        }
-        return Boolean.valueOf(CONFIG.get(name));
-    }
-
-    public static boolean getBoolean(String name) {
-        return Boolean.valueOf(CONFIG.get(name));
     }
 }

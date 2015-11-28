@@ -2,7 +2,7 @@ package com.lts.core.failstore.berkeleydb;
 
 import com.lts.core.commons.file.FileUtils;
 import com.lts.core.commons.utils.CollectionUtils;
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
 import com.lts.core.domain.KVPair;
 import com.lts.core.failstore.AbstractFailStore;
 import com.lts.core.failstore.FailStoreException;
@@ -27,7 +27,11 @@ public class BerkeleydbFailStore extends AbstractFailStore {
     private DatabaseConfig dbConfig;
 
     public BerkeleydbFailStore(File dbPath) {
-        super(dbPath);
+        super(dbPath, true);
+    }
+
+    public BerkeleydbFailStore(File dbPath, boolean needLock) {
+        super(dbPath, needLock);
     }
 
     public static final String name = "berkeleydb";
@@ -54,11 +58,6 @@ public class BerkeleydbFailStore extends AbstractFailStore {
         }
     }
 
-    public BerkeleydbFailStore(String storePath, String identity) {
-        this(new File(storePath.concat(name).concat("/").concat(identity)));
-        getLock(dbPath.getPath());
-    }
-
     @Override
     public void open() throws FailStoreException {
         try {
@@ -72,8 +71,9 @@ public class BerkeleydbFailStore extends AbstractFailStore {
     @Override
     public void put(String key, Object value) throws FailStoreException {
         try {
-            String valueString = JSONUtils.toJSONString(value);
-            OperationStatus status = db.put(null, new DatabaseEntry(key.getBytes("UTF-8")),
+            String valueString = JSON.toJSONString(value);
+            @SuppressWarnings("unused")
+			OperationStatus status = db.put(null, new DatabaseEntry(key.getBytes("UTF-8")),
                     new DatabaseEntry(valueString.getBytes("UTF-8")));
         } catch (Exception e) {
             throw new FailStoreException(e);
@@ -85,7 +85,8 @@ public class BerkeleydbFailStore extends AbstractFailStore {
         try {
             DatabaseEntry delKey = new DatabaseEntry();
             delKey.setData(key.getBytes("UTF-8"));
-            OperationStatus status = db.delete(null, delKey);
+            @SuppressWarnings("unused")
+			OperationStatus status = db.delete(null, delKey);
         } catch (Exception e) {
             throw new FailStoreException(e);
         }
@@ -115,7 +116,7 @@ public class BerkeleydbFailStore extends AbstractFailStore {
                 String key = new String(foundKey.getData(), "UTF-8");
                 String valueString = new String(foundValue.getData(), "UTF-8");
 
-                T value = JSONUtils.parse(valueString, type);
+                T value = JSON.parse(valueString, type);
                 KVPair<String, T> pair = new KVPair<String, T>(key, value);
                 list.add(pair);
                 if (list.size() >= size) {

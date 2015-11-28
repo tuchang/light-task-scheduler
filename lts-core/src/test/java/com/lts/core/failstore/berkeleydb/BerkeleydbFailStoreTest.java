@@ -3,8 +3,7 @@ package com.lts.core.failstore.berkeleydb;
 import com.lts.core.cluster.Config;
 import com.lts.core.cluster.NodeType;
 import com.lts.core.commons.utils.CollectionUtils;
-import com.lts.core.commons.utils.JSONUtils;
-import com.lts.core.commons.utils.StringUtils;
+import com.lts.core.json.JSON;
 import com.lts.core.constant.Constants;
 import com.lts.core.domain.Job;
 import com.lts.core.domain.KVPair;
@@ -27,11 +26,11 @@ public class BerkeleydbFailStoreTest {
     @Before
     public void setup() throws FailStoreException {
         Config config = new Config();
-        config.setNodeGroup("berkeleydb_test");
+        config.setDataPath(Constants.USER_HOME);
+        config.setNodeGroup("test");
         config.setNodeType(NodeType.JOB_CLIENT);
-        config.setFailStorePath(Constants.USER_HOME);
-        config.setIdentity(StringUtils.generateUUID());
-        failStore = new BerkeleydbFailStore(config.getFailStorePath(), config.getIdentity());
+        config.setIdentity("testIdentity");
+        failStore = new BerkeleydbFailStoreFactory().getFailStore(config, config.getFailStorePath());
         failStore.open();
     }
 
@@ -51,7 +50,7 @@ public class BerkeleydbFailStoreTest {
         List<KVPair<String, Job>> kvPairs = failStore.fetchTop(5, Job.class);
         if (CollectionUtils.isNotEmpty(kvPairs)) {
             for (KVPair<String, Job> kvPair : kvPairs) {
-                System.out.println(JSONUtils.toJSONString(kvPair));
+                System.out.println(JSON.toJSONString(kvPair));
             }
         }
     }

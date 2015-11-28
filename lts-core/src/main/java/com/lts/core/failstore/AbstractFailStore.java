@@ -23,10 +23,13 @@ public abstract class AbstractFailStore implements FailStore {
     protected File dbPath;
     private static final String dbLockName = "___db.lock";
 
-    public AbstractFailStore(File dbPath) {
+    public AbstractFailStore(File dbPath, boolean needLock) {
         this.dbPath = dbPath;
         String path = dbPath.getPath();
         this.home = path.substring(0, path.indexOf(getName())).concat(getName());
+        if (needLock) {
+            getLock(dbPath.getPath());
+        }
         init();
     }
 
@@ -50,18 +53,21 @@ public abstract class AbstractFailStore implements FailStore {
         if (subFiles != null && subFiles.length != 0) {
             for (File subFile : subFiles) {
                 try {
-                    FileLock tmpLock = new FileLock(subFile.getPath().concat("/").concat(dbLockName));
-                    boolean locked = tmpLock.tryLock();
-                    if (locked) {
-                        // 能获得锁，说明这个目录锁对应的节点已经down了
-                        FailStore failStore = getFailStore(subFile);
-                        if (failStore != null) {
-                            deadFailStores.add(failStore);
+                    if(subFile.isDirectory()){
+                        FileLock tmpLock = new FileLock(subFile.getPath().concat("/").concat(dbLockName));
+                        boolean locked = tmpLock.tryLock();
+                        if (locked) {
+                            // 能获得锁，说明这个目录锁对应的节点已经down了
+                            FailStore failStore = getFailStore(subFile);
+                            if (failStore != null) {
+                                deadFailStores.add(failStore);
+                            }
+                            tmpLock.release();
                         }
-                        tmpLock.release();
                     }
                 } catch (Exception e) {
                     // ignore
+                    LOGGER.error(e.getMessage(), e);
                 }
             }
         }
@@ -70,8 +76,8 @@ public abstract class AbstractFailStore implements FailStore {
 
     private FailStore getFailStore(File dbPath) {
         try {
-            Constructor constructor = this.getClass().getConstructor(File.class);
-            return (FailStore) constructor.newInstance(dbPath);
+            Constructor<? extends FailStore> constructor = this.getClass().getConstructor(File.class, boolean.class);
+            return constructor.newInstance(dbPath, false);
         } catch (Exception e) {
             LOGGER.error("new instance failStore failed,", e);
         }

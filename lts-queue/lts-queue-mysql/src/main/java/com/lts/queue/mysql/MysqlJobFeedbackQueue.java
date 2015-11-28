@@ -1,11 +1,12 @@
 package com.lts.queue.mysql;
 
-import com.alibaba.fastjson.TypeReference;
 import com.lts.core.cluster.Config;
 import com.lts.core.commons.file.FileUtils;
 import com.lts.core.commons.utils.CollectionUtils;
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
+import com.lts.core.constant.Constants;
 import com.lts.core.domain.TaskTrackerJobResult;
+import com.lts.core.json.TypeReference;
 import com.lts.core.support.JobQueueUtils;
 import com.lts.queue.JobFeedbackQueue;
 import com.lts.queue.domain.JobFeedbackPo;
@@ -37,12 +38,25 @@ public class MysqlJobFeedbackQueue extends JdbcRepository implements JobFeedback
         // create table
         try {
             InputStream is = this.getClass().getClassLoader().getResourceAsStream("sql/lts_job_feedback_queue.sql");
-            String sql = FileUtils.read(is);
+            String sql = FileUtils.read(is, Constants.CHARSET);
             getSqlTemplate().update(getRealSql(sql, jobClientNodeGroup));
         } catch (Exception e) {
             throw new JobQueueException("create table error!", e);
         }
         return false;
+    }
+
+
+    private String delTable = "DROP TABLE IF EXISTS {tableName};";
+
+    @Override
+    public boolean removeQueue(String jobClientNodeGroup) {
+        try {
+            getSqlTemplate().update(delTable.replace("{tableName}", JobQueueUtils.getFeedbackQueueName(jobClientNodeGroup)));
+            return true;
+        } catch (SQLException e) {
+            throw new JobQueueException(e);
+        }
     }
 
     private String getTableName(String jobClientNodeGroup) {
@@ -73,7 +87,7 @@ public class MysqlJobFeedbackQueue extends JdbcRepository implements JobFeedback
         Object[] params = new Object[2];
         for (JobFeedbackPo jobFeedbackPo : jobFeedbackPos) {
             params[0] = jobFeedbackPo.getGmtCreated();
-            params[1] = JSONUtils.toJSONString(jobFeedbackPo.getTaskTrackerJobResult());
+            params[1] = JSON.toJSONString(jobFeedbackPo.getTaskTrackerJobResult());
             try {
                 String jobClientNodeGroup = jobFeedbackPo.getTaskTrackerJobResult().getJobWrapper().getJob().getSubmitNodeGroup();
                 getSqlTemplate().update(getRealSql(insertSQL, jobClientNodeGroup), params);
@@ -125,8 +139,7 @@ public class MysqlJobFeedbackQueue extends JdbcRepository implements JobFeedback
             while (rs.next()) {
                 JobFeedbackPo jobFeedbackPo = new JobFeedbackPo();
                 jobFeedbackPo.setId(rs.getString("id"));
-                jobFeedbackPo.setTaskTrackerJobResult(JSONUtils.parse(rs.getString("job_result"), new TypeReference<TaskTrackerJobResult>() {
-                }));
+                jobFeedbackPo.setTaskTrackerJobResult(JSON.parse(rs.getString("job_result"), new TypeReference<TaskTrackerJobResult>(){}));
                 jobFeedbackPo.setGmtCreated(rs.getLong("gmt_created"));
                 jobFeedbackPos.add(jobFeedbackPo);
             }

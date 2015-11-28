@@ -1,6 +1,6 @@
 package com.lts.core.cluster;
 
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
 import com.lts.core.compiler.support.AdaptiveCompiler;
 import com.lts.core.constant.Constants;
 
@@ -15,7 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Config implements Serializable {
 
-    // 节点是否可用
+	private static final long serialVersionUID = -8283382582968938472L;
+	// 节点是否可用
     private boolean available = true;
     // 应用节点组
     private String nodeGroup;
@@ -32,7 +33,7 @@ public class Config implements Serializable {
     // 监听端口
     private int listenPort;
     // 任务信息存储路径(譬如TaskTracker反馈任务信息给JobTracker, JobTracker down掉了, 那么存储下来等待JobTracker可用时再发送)
-    private String failStorePath;
+    private String dataPath;
     // 集群名字
     private String clusterName;
     // java编译器
@@ -106,12 +107,16 @@ public class Config implements Serializable {
         this.listenPort = listenPort;
     }
 
-    public void setFailStorePath(String failStorePath) {
-        this.failStorePath = failStorePath;
+    public String getFailStorePath() {
+        return dataPath + "/.lts" + "/" + nodeType + "/" + nodeGroup + "/failstore/";
     }
 
-    public String getFailStorePath() {
-        return failStorePath + "/.lts" + "/" + nodeType + "/" + nodeGroup + "/";
+    public String getDataPath() {
+        return dataPath;
+    }
+
+    public void setDataPath(String dataPath) {
+        this.dataPath = dataPath;
     }
 
     public boolean isAvailable() {
@@ -260,6 +265,6 @@ public class Config implements Serializable {
 
     @Override
     public String toString() {
-        return JSONUtils.toJSONString(this);
+        return JSON.toJSONString(this);
     }
 }

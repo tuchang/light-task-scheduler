@@ -2,7 +2,7 @@ package com.lts.queue.mongo;
 
 import com.lts.core.cluster.Config;
 import com.lts.core.commons.utils.CollectionUtils;
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
 import com.lts.core.logger.Logger;
 import com.lts.core.logger.LoggerFactory;
 import com.lts.core.support.JobQueueUtils;
@@ -44,6 +44,15 @@ public class MongoJobFeedbackQueue extends MongoRepository implements JobFeedbac
     }
 
     @Override
+    public boolean removeQueue(String jobClientNodeGroup) {
+        String tableName = JobQueueUtils.getFeedbackQueueName(jobClientNodeGroup);
+        DBCollection dbCollection = template.getCollection(tableName);
+        dbCollection.drop();
+        LOGGER.info("drop queue " + tableName);
+        return true;
+    }
+
+    @Override
     public boolean add(List<JobFeedbackPo> jobFeedbackPos) {
         if (CollectionUtils.isEmpty(jobFeedbackPos)) {
             return true;
@@ -54,7 +63,7 @@ public class MongoJobFeedbackQueue extends MongoRepository implements JobFeedbac
             try {
                 template.save(tableName, jobFeedbackPo);
             } catch (DuplicateKeyException e) {
-                LOGGER.warn("duplicate key for job feedback po: " + JSONUtils.toJSONString(jobFeedbackPo));
+                LOGGER.warn("duplicate key for job feedback po: " + JSON.toJSONString(jobFeedbackPo));
             }
         }
         return true;

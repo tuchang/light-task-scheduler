@@ -29,6 +29,7 @@ public class ZkClientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
     public ZkClientZookeeperClient(Config config) {
         String registryAddress = NodeRegistryUtils.getRealRegistryAddress(config.getRegistryAddress());
         zkClient = new ZkClient(registryAddress, connectionTimeout);
+
         zkClient.subscribeStateChanges(new IZkStateListener() {
 
             @Override
@@ -38,6 +39,8 @@ public class ZkClientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
                     stateChanged(StateListener.DISCONNECTED);
                 } else if (state == KeeperState.SyncConnected) {
                     stateChanged(StateListener.CONNECTED);
+                } else if (state == KeeperState.Expired) {
+                    stateChanged(StateListener.DISCONNECTED);
                 }
             }
 
@@ -57,7 +60,7 @@ public class ZkClientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
                 zkClient.createPersistent(path, true);
                 return path;
             }
-        } catch (ZkNodeExistsException e) {
+        } catch (ZkNodeExistsException ignored) {
         }
         return null;
     }
@@ -71,7 +74,7 @@ public class ZkClientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
                 zkClient.createPersistent(path, data);
                 return path;
             }
-        } catch (ZkNodeExistsException e) {
+        } catch (ZkNodeExistsException ignored) {
         }
         return null;
     }
@@ -85,7 +88,7 @@ public class ZkClientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
                 zkClient.createEphemeral(path);
                 return path;
             }
-        } catch (ZkNodeExistsException e) {
+        } catch (ZkNodeExistsException ignored) {
         }
         return null;
     }
@@ -99,7 +102,7 @@ public class ZkClientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
                 zkClient.createEphemeral(path, data);
                 return path;
             }
-        } catch (ZkNodeExistsException e) {
+        } catch (ZkNodeExistsException ignored) {
         }
         return null;
     }
@@ -128,7 +131,7 @@ public class ZkClientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
     public boolean delete(String path) {
         try {
             return zkClient.delete(path);
-        } catch (ZkNoNodeException e) {
+        } catch (ZkNoNodeException ignored) {
         }
         return false;
     }
@@ -137,7 +140,7 @@ public class ZkClientZookeeperClient extends AbstractZookeeperClient<IZkChildLis
     public boolean exists(String path) {
         try {
             return zkClient.exists(path);
-        } catch (ZkNoNodeException e) {
+        } catch (ZkNoNodeException ignored) {
         }
         return false;
     }

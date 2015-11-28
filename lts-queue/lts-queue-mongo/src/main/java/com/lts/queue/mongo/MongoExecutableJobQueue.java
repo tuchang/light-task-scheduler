@@ -61,9 +61,18 @@ public class MongoExecutableJobQueue extends AbstractMongoJobQueue implements Ex
     }
 
     @Override
+    public boolean removeQueue(String taskTrackerNodeGroup) {
+        String tableName = JobQueueUtils.getExecutableQueueName(taskTrackerNodeGroup);
+        DBCollection dbCollection = template.getCollection(tableName);
+        dbCollection.drop();
+        LOGGER.info("drop queue " + tableName);
+
+        return true;
+    }
+
+    @Override
     public boolean add(JobPo jobPo) {
         try {
-            // TODO 这里后面改掉，所有的nodeGroup 需要先在lts-admin中申请,就不用判断了
             String tableName = JobQueueUtils.getExecutableQueueName(jobPo.getTaskTrackerNodeGroup());
             if (!EXIST_TABLE.contains(tableName)) {
                 createQueue(jobPo.getTaskTrackerNodeGroup());
@@ -108,5 +117,14 @@ public class MongoExecutableJobQueue extends AbstractMongoJobQueue implements Ex
         query.field("isRunning").equal(true).
                 filter("gmtCreated < ", deadline);
         return query.asList();
+    }
+
+    @Override
+    public JobPo getJob(String taskTrackerNodeGroup, String taskId) {
+        String tableName = JobQueueUtils.getExecutableQueueName(taskTrackerNodeGroup);
+        Query<JobPo> query = template.createQuery(tableName, JobPo.class);
+        query.field("taskId").equal(taskId).
+                field("taskTrackerNodeGroup").equal(taskTrackerNodeGroup);
+        return query.get();
     }
 }

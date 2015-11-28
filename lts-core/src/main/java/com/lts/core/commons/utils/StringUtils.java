@@ -140,9 +140,24 @@ public final class StringUtils {
         return sb.toString();
     }
 
+    public static String trim(String str){
+        if(str == null){
+            return null;
+        }
+        return str.trim();
+    }
+
     public static boolean isInteger(String str) {
         if (str == null || str.length() == 0)
             return false;
         return INT_PATTERN.matcher(str).matches();
+    }
+
+    public static String toString(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        return value.toString();
     }
 }

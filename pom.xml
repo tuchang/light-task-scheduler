@@ -7,7 +7,7 @@
     <groupId>com.lts</groupId>
     <artifactId>lts-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.5.4-SNAPSHOT</version>
+    <version>1.6.3-SNAPSHOT</version>
     <modules>
         <module>lts-core</module>
         <module>lts-jobtracker</module>
@@ -18,10 +18,12 @@
         <module>lts-example</module>
         <module>lts-admin</module>
         <module>lts-spring</module>
+        <module>lts-startup</module>
+        <module>lts</module>
     </modules>
 
     <properties>
-        <jedis.version>2.1.0</jedis.version>
+        <jedis.version>2.7.3</jedis.version>
         <fastjson.version>1.1.41</fastjson.version>
         <leveldbjni.version>1.8</leveldbjni.version>
         <curator.version>1.1.10</curator.version>
@@ -41,8 +43,14 @@
         <sleepycat.version>5.0.73</sleepycat.version>
         <rocksdbjni.version>3.10.1</rocksdbjni.version>
         <reflectasm.version>1.11.0</reflectasm.version>
-        <hsqldb.version>2.3.2</hsqldb.version>
+        <h2.version>1.4.189</h2.version>
         <springframework.version>4.1.6.RELEASE</springframework.version>
+        <mina.version>2.0.9</mina.version>
+        <hessian.version>4.0.38</hessian.version>
+        <mapdb.version>2.0-beta10</mapdb.version>
+        <groovy.version>2.4.5</groovy.version>
+        <jackson.version>2.6.3</jackson.version>
+        <aspectj.version>1.7.2</aspectj.version>
     </properties>
 
     <dependencyManagement>
@@ -101,11 +109,6 @@
                         <artifactId>cglib-nodep</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.hsqldb</groupId>
-                <artifactId>hsqldb</artifactId>
-                <version>${hsqldb.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>
@@ -182,15 +185,65 @@
                 <artifactId>reflectasm</artifactId>
                 <version>${reflectasm.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${h2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.mina</groupId>
+                <artifactId>mina-core</artifactId>
+                <version>${mina.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.caucho</groupId>
+                <artifactId>hessian</artifactId>
+                <version>${hessian.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapdb</groupId>
+                <artifactId>mapdb</artifactId>
+                <version>${mapdb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy</artifactId>
+                <version>${groovy.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.ant</groupId>
+                        <artifactId>ant</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.thoughtworks.xstream</groupId>
+                        <artifactId>xstream</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.gpars</groupId>
+                        <artifactId>gpars</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.ivy</groupId>
+                        <artifactId>ivy</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.fusesource.jansi</groupId>
+                        <artifactId>jansi</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
     <build>
         <plugins>
             <plugin>
@@ -218,5 +271,11 @@
             </plugin>
         </plugins>
     </build>
+
+    <scm>
+        <connection>scm:git:https://github.com/qq254963746/light-task-scheduler.git</connection>
+        <developerConnection>scm:git:https://github.com/qq254963746/light-task-scheduler.git</developerConnection>
+        <url>https://github.com/qq254963746/light-task-scheduler.git</url>
+    </scm>
 
 </project>

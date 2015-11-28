@@ -1,12 +1,13 @@
 package com.lts.core.domain;
 
 
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
 import com.lts.core.commons.utils.StringUtils;
 import com.lts.core.exception.JobSubmitException;
 import com.lts.core.support.CronExpression;
 import com.lts.remoting.annotation.NotNull;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,9 +15,11 @@ import java.util.Map;
 /**
  * @author Robert HG (254963746@qq.com) on 8/13/14.
  */
-public class Job {
+public class Job implements Serializable{
 
-    @NotNull
+	private static final long serialVersionUID = 7881199011994149340L;
+	
+	@NotNull
     private String taskId;
     /**
      * 优先级 (数值越大 优先级越低)
@@ -44,6 +47,10 @@ public class Job {
      * 如果设置了 cronExpression， 那么这个字段没用
      */
     private Long triggerTime;
+    /**
+     * 当任务队列中存在这个任务的时候，是否替换更新
+     */
+    private boolean replaceOnExist = false;
 
     public Integer getPriority() {
         return priority;
@@ -127,7 +134,7 @@ public class Job {
         return this.cronExpression != null && !"".equals(this.cronExpression.trim());
     }
 
-    public void setTriggerTime(Date date) {
+    public void setTriggerDate(Date date) {
         if (date != null) {
             this.triggerTime = date.getTime();
         }
@@ -141,9 +148,17 @@ public class Job {
         this.triggerTime = triggerTime;
     }
 
+    public boolean isReplaceOnExist() {
+        return replaceOnExist;
+    }
+
+    public void setReplaceOnExist(boolean replaceOnExist) {
+        this.replaceOnExist = replaceOnExist;
+    }
+
     @Override
     public String toString() {
-        return JSONUtils.toJSONString(this);
+        return JSON.toJSONString(this);
     }
 
     public void checkField() throws JobSubmitException {

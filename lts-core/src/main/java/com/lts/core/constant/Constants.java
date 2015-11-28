@@ -20,14 +20,7 @@ public interface Constants {
     // 默认集群名字
     String DEFAULT_CLUSTER_NAME = "defaultCluster";
 
-    // 默认JobTracker节点组
-    String DEFAULT_NODE_JOB_TRACKER_GROUP = "jobTrackerGroup";
-    // 默认JobClient节点组
-    String DEFAULT_NODE_JOB_CLIENT_GROUP = "jobClientGroup";
-    // 默认TaskTracker节点组
-    String DEFAULT_NODE_TASK_TRACKER_GROUP = "taskTrackerGroup";
-
-    String CHARSET = "utf-8";
+    String CHARSET = "UTF-8";
 
     int DEFAULT_TIMEOUT = 1000;
 
@@ -44,6 +37,8 @@ public interface Constants {
     String SUBSCRIBE = "subscribe";
 
     String UNSUBSCRIBE = "unsubscribe";
+
+    int DEFAULT_BUFFER_SIZE = 16 * 1024;
     /**
      * 注册中心失败事件重试事件
      */
@@ -68,6 +63,7 @@ public interface Constants {
     String JOB_LOGGER_KEY = "job.logger";
 
     String JOB_QUEUE_KEY = "job.queue";
+
     // 客户端提交并发请求size
     String JOB_SUBMIT_CONCURRENCY_SIZE = "job.submit.concurrency.size";
     int DEFAULT_JOB_SUBMIT_CONCURRENCY_SIZE = 100;
@@ -84,4 +80,28 @@ public interface Constants {
     Charset UTF_8 = Charset.forName("UTF-8");
 
     String MONITOR_DATA_ADD_URL = "/api/monitor/monitor-data-add.do";
+
+    String MONITOR_JVM_INFO_DATA_ADD_URL = "/api/monitor/jvm-info-data-add.do";
+
+    String MONITOR_COMMAND_INFO_ADD_URL = "/api/monitor/command-info-add.do";
+
+    String JOB_PULL_FREQUENCY = "job.pull.frequency";
+    int DEFAULT_JOB_PULL_FREQUENCY = 1;
+
+    // TaskTracker 离线(网络隔离)时间 2 分钟，超过两分钟，自动停止当前执行任务
+    long TASK_TRACKER_OFFLINE_LIMIT_MILLIS = 2 * 60 * 1000;
+    // TaskTracker超过一定时间断线JobTracker，自动停止当前的所有任务
+    String TASK_TRACKER_STOP_WORKING_SWITCH = "stop.working";
+
+    String ADMIN_ID_PREFIX = "LTS_admin_";
+
+    // 是否延迟批量刷盘日志, 如果启用，采用队列的方式批量将日志刷盘(在应用关闭的时候，可能会造成日志丢失)
+    String LAZY_JOB_LOGGER = "lazy.job.logger";
+    // 延迟批量刷盘日志 内存中的最大日志量阀值
+    String LAZY_JOB_LOGGER_MEM_SIZE = "lazy.job.logger.mem.size";
+    // 延迟批量刷盘日志 检查频率
+    String LAZY_JOB_LOGGER_CHECK_PERIOD = "lazy.job.logger.check.period";
+
+    String DEFAULT_REMOTING_SERIALIZABLE = "lts.remoting.serializable.default";
+
 }

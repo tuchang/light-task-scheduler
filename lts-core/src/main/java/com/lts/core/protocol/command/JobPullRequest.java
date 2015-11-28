@@ -4,9 +4,11 @@ package com.lts.core.protocol.command;
  * Job pull request
  * Robert HG (254963746@qq.com) on 3/25/15.
  */
-public class JobPullRequest extends AbstractCommandBody {
+public class JobPullRequest extends AbstractRemotingCommandBody {
 
-    private Integer availableThreads;
+	private static final long serialVersionUID = 9222159289387747395L;
+	
+	private Integer availableThreads;
 
     public Integer getAvailableThreads() {
         return availableThreads;

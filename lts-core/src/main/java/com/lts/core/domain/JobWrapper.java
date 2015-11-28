@@ -1,11 +1,15 @@
 package com.lts.core.domain;
 
+import java.io.Serializable;
+
 /**
  * @author Robert HG (254963746@qq.com) on 6/13/15.
  */
-public class JobWrapper {
+public class JobWrapper implements Serializable{
 
-    private String jobId;
+	private static final long serialVersionUID = 1476984243004969158L;
+
+	private String jobId;
 
     private Job job;
 

@@ -3,7 +3,7 @@ package com.lts.core.support;
 import com.lts.core.Application;
 import com.lts.core.commons.utils.CollectionUtils;
 import com.lts.core.commons.utils.GenericsUtils;
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
 import com.lts.core.constant.EcTopic;
 import com.lts.core.domain.KVPair;
 import com.lts.core.extension.ExtensionLoader;
@@ -104,10 +104,10 @@ public abstract class RetryScheduler<T> {
                 // 这个时间后面再去优化
                 scheduledFuture = RETRY_EXECUTOR_SERVICE.scheduleWithFixedDelay
                         (new CheckSelfRunner(), 10, 30, TimeUnit.SECONDS);
-                LOGGER.info("Start {} RetryScheduler success.", name);
+                LOGGER.info("Start {} RetryScheduler success", name);
             }
         } catch (Throwable t) {
-            LOGGER.error("Start {} RetryScheduler failed.", name, t);
+            LOGGER.error("Start {} RetryScheduler failed", name, t);
         }
     }
 
@@ -117,7 +117,7 @@ public abstract class RetryScheduler<T> {
                 // 这个时间后面再去优化
                 masterScheduledFuture = MASTER_RETRY_EXECUTOR_SERVICE.
                         scheduleWithFixedDelay(new CheckDeadFailStoreRunner(), 30, 60, TimeUnit.SECONDS);
-                LOGGER.info("Start {} master RetryScheduler success.", name);
+                LOGGER.info("Start {} master RetryScheduler success", name);
             }
         } catch (Throwable t) {
             LOGGER.error("Start {} master RetryScheduler failed.", name, t);
@@ -129,10 +129,10 @@ public abstract class RetryScheduler<T> {
             if (masterCheckStart.compareAndSet(true, false)) {
                 masterScheduledFuture.cancel(true);
                 MASTER_RETRY_EXECUTOR_SERVICE.shutdown();
-                LOGGER.info("Stop {} master RetryScheduler success.", name);
+                LOGGER.info("Stop {} master RetryScheduler success", name);
             }
         } catch (Throwable t) {
-            LOGGER.error("Stop {} master RetryScheduler failed.", name, t);
+            LOGGER.error("Stop {} master RetryScheduler failed", name, t);
         }
     }
 
@@ -142,10 +142,10 @@ public abstract class RetryScheduler<T> {
                 scheduledFuture.cancel(true);
                 failStore.close();
                 RETRY_EXECUTOR_SERVICE.shutdown();
-                LOGGER.info("Stop {} RetryScheduler success.", name);
+                LOGGER.info("Stop {} RetryScheduler success", name);
             }
         } catch (Throwable t) {
-            LOGGER.error("Stop {} RetryScheduler failed.", name, t);
+            LOGGER.error("Stop {} RetryScheduler failed", name, t);
         }
     }
 
@@ -154,7 +154,7 @@ public abstract class RetryScheduler<T> {
             stop();
             failStore.destroy();
         } catch (FailStoreException e) {
-            LOGGER.error("destroy {} RetryScheduler failed.", name, e);
+            LOGGER.error("destroy {} RetryScheduler failed", name, e);
         }
     }
 
@@ -188,7 +188,7 @@ public abstract class RetryScheduler<T> {
                             values.add(kvPair.getValue());
                         }
                         if (retry(values)) {
-                            LOGGER.info("{} RetryScheduler, local files send success, size: {}, {}", name, values.size(), JSONUtils.toJSONString(values));
+                            LOGGER.info("{} RetryScheduler, local files send success, size: {}, {}", name, values.size(), JSON.toJSONString(values));
                             failStore.delete(keys);
                         } else {
                             break;
@@ -201,7 +201,7 @@ public abstract class RetryScheduler<T> {
                 } while (CollectionUtils.isNotEmpty(kvPairs));
 
             } catch (Throwable e) {
-                LOGGER.error("Run {} RetryScheduler error.", name, e);
+                LOGGER.error("Run {} RetryScheduler error ", name, e);
             }
         }
     }
@@ -240,14 +240,15 @@ public abstract class RetryScheduler<T> {
                                 values.add(kvPair.getValue());
                             }
                             if (retry(values)) {
-                                LOGGER.info("{} RetryScheduler, dead local files send success, size: {}, {}", name, values.size(), JSONUtils.toJSONString(values));
+                                LOGGER.info("{} RetryScheduler, dead local files send success, size: {}, {}", name, values.size(), JSON.toJSONString(values));
                                 store.delete(keys);
                             } else {
+                                store.close();
                                 break;
                             }
                             try {
                                 Thread.sleep(500);
-                            } catch (Exception e) {
+                            } catch (Exception ignored) {
                             }
                         }
                     }
@@ -262,7 +263,7 @@ public abstract class RetryScheduler<T> {
         try {
             lock.tryLock();
             failStore.put(key, value);
-            LOGGER.info("{} RetryScheduler, local files save success, {}", name, JSONUtils.toJSONString(value));
+            LOGGER.info("{} RetryScheduler, local files save success, {}", name, JSON.toJSONString(value));
         } catch (FailStoreException e) {
             LOGGER.error("{} RetryScheduler in schedule error. ", name, e);
         } finally {
@@ -275,16 +276,11 @@ public abstract class RetryScheduler<T> {
 
     /**
      * 远程连接是否可用
-     *
-     * @return
      */
     protected abstract boolean isRemotingEnable();
 
     /**
      * 重试
-     *
-     * @param list
-     * @return
      */
     protected abstract boolean retry(List<T> list);
 

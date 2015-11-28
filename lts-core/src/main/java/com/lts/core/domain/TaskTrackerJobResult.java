@@ -1,14 +1,18 @@
 package com.lts.core.domain;
 
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
+
+import java.io.Serializable;
 
 /**
  * @author Robert HG (254963746@qq.com) on 8/19/14.
  * TaskTracker 任务执行结果
  */
-public class TaskTrackerJobResult {
+public class TaskTrackerJobResult implements Serializable{
 
-    private JobWrapper jobWrapper;
+	private static final long serialVersionUID = 8622758290605000897L;
+
+	private JobWrapper jobWrapper;
 
     private Action action;
 
@@ -50,6 +54,6 @@ public class TaskTrackerJobResult {
 
     @Override
     public String toString() {
-        return JSONUtils.toJSONString(this);
+        return JSON.toJSONString(this);
     }
 }

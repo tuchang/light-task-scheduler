@@ -3,13 +3,14 @@ package com.lts.queue.mysql;
 import com.lts.core.cluster.Config;
 import com.lts.core.commons.file.FileUtils;
 import com.lts.core.commons.utils.StringUtils;
-import com.lts.web.request.JobQueueRequest;
+import com.lts.core.constant.Constants;
 import com.lts.core.support.JobQueueUtils;
 import com.lts.core.support.SystemClock;
 import com.lts.queue.ExecutableJobQueue;
 import com.lts.queue.domain.JobPo;
 import com.lts.queue.exception.JobQueueException;
 import com.lts.queue.mysql.support.ResultSetHandlerHolder;
+import com.lts.web.request.JobQueueRequest;
 
 import java.io.InputStream;
 import java.sql.SQLException;
@@ -41,11 +42,23 @@ public class MysqlExecutableJobQueue extends AbstractMysqlJobQueue implements Ex
         // create table
         try {
             InputStream is = this.getClass().getClassLoader().getResourceAsStream("sql/lts_executable_job_queue.sql");
-            String sql = FileUtils.read(is);
+            String sql = FileUtils.read(is, Constants.CHARSET);
             getSqlTemplate().update(getRealSql(sql, taskTrackerNodeGroup));
             return true;
         } catch (Exception e) {
             throw new JobQueueException("create table error!", e);
+        }
+    }
+
+    private String delTable = "DROP TABLE IF EXISTS {tableName};";
+
+    @Override
+    public boolean removeQueue(String taskTrackerNodeGroup) {
+        try {
+            getSqlTemplate().update(delTable.replace("{tableName}", JobQueueUtils.getExecutableQueueName(taskTrackerNodeGroup)));
+            return true;
+        } catch (SQLException e) {
+            throw new JobQueueException(e);
         }
     }
 
@@ -112,6 +125,17 @@ public class MysqlExecutableJobQueue extends AbstractMysqlJobQueue implements Ex
     public List<JobPo> getDeadJob(String taskTrackerNodeGroup, long deadline) {
         try {
             return getSqlTemplate().query(getRealSql(getDeadJobSQL, taskTrackerNodeGroup), ResultSetHandlerHolder.JOB_PO_LIST_RESULT_SET_HANDLER, true, deadline);
+        } catch (SQLException e) {
+            throw new JobQueueException(e);
+        }
+    }
+
+    private String selectSQL = "SELECT * FROM `{tableName}` WHERE task_id = ? AND task_tracker_node_group = ?";
+
+    @Override
+    public JobPo getJob(String taskTrackerNodeGroup, String taskId) {
+        try {
+            return getSqlTemplate().query(getRealSql(selectSQL, taskTrackerNodeGroup), ResultSetHandlerHolder.JOB_PO_RESULT_SET_HANDLER, taskId, taskTrackerNodeGroup);
         } catch (SQLException e) {
             throw new JobQueueException(e);
         }

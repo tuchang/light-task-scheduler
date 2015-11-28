@@ -1,8 +1,5 @@
 package com.lts.core.commons.utils;
 
-import com.lts.core.logger.Logger;
-import com.lts.core.logger.LoggerFactory;
-
 import java.io.IOException;
 import java.net.*;
 import java.util.Enumeration;
@@ -16,7 +13,7 @@ public class NetUtils {
 
     public static final String LOCALHOST = "127.0.0.1";
     public static final String ANYHOST = "0.0.0.0";
-    private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
+//    private static final Logger logger = LoggerFactory.getLogger(NetUtils.class);
     private static final int RND_PORT_START = 30000;
 
     private static final int RND_PORT_RANGE = 10000;
@@ -156,7 +153,7 @@ public class NetUtils {
                 return localAddress;
             }
         } catch (Exception e) {
-            logger.warn("Failed to retriving ip address, " + e.getMessage(), e);
+//            logger.warn("Failed to retriving ip address, " + e.getMessage(), e);
         }
         try {
             Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
@@ -165,27 +162,25 @@ public class NetUtils {
                     try {
                         NetworkInterface network = interfaces.nextElement();
                         Enumeration<InetAddress> addresses = network.getInetAddresses();
-                        if (addresses != null) {
-                            while (addresses.hasMoreElements()) {
-                                try {
-                                    InetAddress address = addresses.nextElement();
-                                    if (isValidAddress(address)) {
-                                        return address;
-                                    }
-                                } catch (Exception e) {
-                                    logger.warn("Failed to retriving ip address, " + e.getMessage(), e);
+                        while (addresses.hasMoreElements()) {
+                            try {
+                                InetAddress address = addresses.nextElement();
+                                if (isValidAddress(address)) {
+                                    return address;
                                 }
+                            } catch (Exception e) {
+//                                logger.warn("Failed to retriving ip address, " + e.getMessage(), e);
                             }
                         }
                     } catch (Exception e) {
-                        logger.warn("Failed to retriving ip address, " + e.getMessage(), e);
+//                        logger.warn("Failed to retriving ip address, " + e.getMessage(), e);
                     }
                 }
             }
         } catch (Exception e) {
-            logger.warn("Failed to retriving ip address, " + e.getMessage(), e);
+//            logger.warn("Failed to retriving ip address, " + e.getMessage(), e);
         }
-        logger.error("Could not get local host ip address, will use 127.0.0.1 instead.");
+//        logger.error("Could not get local host ip address, will use 127.0.0.1 instead.");
         return localAddress;
     }
 

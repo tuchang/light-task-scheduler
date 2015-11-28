@@ -1,17 +1,19 @@
 package com.lts.web.controller.ui;
 
 import com.lts.core.cluster.NodeType;
+import com.lts.core.commons.utils.CollectionUtils;
 import com.lts.core.commons.utils.DateUtils;
 import com.lts.queue.domain.NodeGroupPo;
 import com.lts.web.cluster.AdminApplication;
-import com.lts.web.repository.JobTrackerMonitorDataRepository;
-import com.lts.web.repository.TaskTrackerMonitorDataRepository;
+import com.lts.web.repository.mapper.JobTrackerMonitorRepo;
+import com.lts.web.repository.mapper.TaskTrackerMonitorRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -24,38 +26,48 @@ public class MonitorUIController {
     @Autowired
     private AdminApplication application;
     @Autowired
-    private TaskTrackerMonitorDataRepository taskTrackerMonitorDataRepository;
+    private TaskTrackerMonitorRepo taskTrackerMonitorRepo;
     @Autowired
-    private JobTrackerMonitorDataRepository jobTrackerMonitorDataRepository;
+    private JobTrackerMonitorRepo jobTrackerMonitorRepo;
 
-    @RequestMapping("monitor/tasktracker-monitor")
+    @RequestMapping("tasktracker-monitor")
     public String taskTrackerMonitor(Model model) {
 
         List<NodeGroupPo> taskTrackerNodeGroups = application.getNodeGroupStore().getNodeGroup(NodeType.TASK_TRACKER);
         model.addAttribute("taskTrackerNodeGroups", taskTrackerNodeGroups);
 
-        model.addAttribute("startTime", DateUtils.formatYMD(new Date()));
-        model.addAttribute("endTime", DateUtils.formatYMD(new Date()));
+        Date endDate = new Date();
+        model.addAttribute("startTime", DateUtils.formatYMD_HMS(DateUtils.addHour(endDate, -3)));
+        model.addAttribute("endTime", DateUtils.formatYMD_HMS(endDate));
 
-        Map<String, List<String>> taskTrackerMap = taskTrackerMonitorDataRepository.getTaskTrackerMap();
-        model.addAttribute("taskTrackerMap", taskTrackerMap);
+        List<Map<String, String>> taskTrackerMap = taskTrackerMonitorRepo.getTaskTrackerMap();
 
-        return "tasktracker-monitor";
+        Map<String, String> map = new HashMap<String, String>();
+        if(CollectionUtils.isNotEmpty(taskTrackerMap)){
+            for (Map<String, String> pairMap : taskTrackerMap) {
+                map.put(pairMap.get("key"), pairMap.get("value"));
+            }
+        }
+
+        model.addAttribute("taskTrackerMap", map);
+
+        return "tasktrackerMonitor";
     }
 
-    @RequestMapping("monitor/jobtracker-monitor")
+    @RequestMapping("jobtracker-monitor")
     public String jobTrackerMonitor(Model model) {
 
         List<NodeGroupPo> taskTrackerNodeGroups = application.getNodeGroupStore().getNodeGroup(NodeType.JOB_TRACKER);
         model.addAttribute("jobTrackerNodeGroups", taskTrackerNodeGroups);
 
-        model.addAttribute("startTime", DateUtils.formatYMD(new Date()));
-        model.addAttribute("endTime", DateUtils.formatYMD(new Date()));
+        Date endDate = new Date();
+        model.addAttribute("startTime", DateUtils.formatYMD_HMS(DateUtils.addHour(endDate, -3)));
+        model.addAttribute("endTime", DateUtils.formatYMD_HMS(endDate));
 
-        List<String> taskTrackers = jobTrackerMonitorDataRepository.getJobTrackers();
+        List<String> taskTrackers = jobTrackerMonitorRepo.getJobTrackers();
         model.addAttribute("jobTrackers", taskTrackers);
 
-        return "jobtracker-monitor";
+        return "jobtrackerMonitor";
     }
 
 }

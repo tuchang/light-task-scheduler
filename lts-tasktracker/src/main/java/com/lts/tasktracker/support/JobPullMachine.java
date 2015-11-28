@@ -1,5 +1,6 @@
 package com.lts.tasktracker.support;
 
+import com.lts.core.constant.Constants;
 import com.lts.core.constant.EcTopic;
 import com.lts.core.exception.JobTrackerNotFoundException;
 import com.lts.core.logger.Logger;
@@ -21,6 +22,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * 用来向JobTracker去取任务
+ * 1. 会订阅JobTracker的可用,不可用消息主题的订阅
+ * 2. 只有当JobTracker可用的时候才会去Pull任务
+ * 3. Pull只是会给JobTracker发送一个通知
  * Robert HG (254963746@qq.com) on 3/25/15.
  */
 public class JobPullMachine {
@@ -29,13 +33,15 @@ public class JobPullMachine {
 
     // 定时检查TaskTracker是否有空闲的线程，如果有，那么向JobTracker发起任务pull请求
     private final ScheduledExecutorService SCHEDULED_CHECKER = Executors.newScheduledThreadPool(1);
-    private ScheduledFuture scheduledFuture;
+    private ScheduledFuture<?> scheduledFuture;
     private AtomicBoolean start = new AtomicBoolean(false);
     private TaskTrackerApplication application;
     private Runnable runnable;
+    private int jobPullFrequency;
 
     public JobPullMachine(final TaskTrackerApplication application) {
         this.application = application;
+        this.jobPullFrequency = application.getConfig().getParameter(Constants.JOB_PULL_FREQUENCY, Constants.DEFAULT_JOB_PULL_FREQUENCY);
 
         application.getEventCenter().subscribe(
                 new EventSubscriber(JobPullMachine.class.getSimpleName().concat(application.getConfig().getIdentity()),
@@ -69,8 +75,8 @@ public class JobPullMachine {
         try {
             if (start.compareAndSet(false, true)) {
                 if (scheduledFuture == null) {
-                    scheduledFuture = SCHEDULED_CHECKER.scheduleWithFixedDelay(runnable, 3, 3, TimeUnit.SECONDS);
-                           // 5s 检查一次是否有空余线程
+                    scheduledFuture = SCHEDULED_CHECKER.scheduleWithFixedDelay(runnable, 1, jobPullFrequency, TimeUnit.SECONDS);
+                    // 5s 检查一次是否有空余线程
                 }
                 LOGGER.info("Start job pull machine success!");
             }

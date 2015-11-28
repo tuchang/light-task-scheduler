@@ -4,9 +4,11 @@ import com.lts.core.commons.utils.Assert;
 import com.lts.core.commons.utils.StringUtils;
 import com.lts.core.constant.Level;
 import com.lts.core.listener.MasterChangeListener;
+import com.lts.spring.tasktracker.JobDispatcher;
 import com.lts.tasktracker.TaskTracker;
 import com.lts.tasktracker.runner.JobRunner;
 import com.lts.tasktracker.runner.RunnerFactory;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
@@ -23,8 +25,10 @@ import java.util.Properties;
 /**
  * TaskTracker Spring Bean 工厂类
  * 如果用这个工厂类，那么JobRunner中引用SpringBean的话,只有通过注解的方式注入
+ *
  * @author Robert HG (254963746@qq.com) on 8/4/15.
  */
+@SuppressWarnings("rawtypes")
 public class TaskTrackerAnnotationFactoryBean implements FactoryBean<TaskTracker>, ApplicationContextAware,
         InitializingBean, DisposableBean {
 
@@ -46,7 +50,7 @@ public class TaskTrackerAnnotationFactoryBean implements FactoryBean<TaskTracker
     /**
      * 提交失败任务存储路径 , 默认用户木邻居
      */
-    private String failStorePath;
+    private String dataPath;
     /**
      * 工作线程个数
      */
@@ -54,7 +58,7 @@ public class TaskTrackerAnnotationFactoryBean implements FactoryBean<TaskTracker
     /**
      * 任务执行类
      */
-    private Class jobRunnerClass;
+	private Class jobRunnerClass;
     /**
      * 业务日志级别
      */
@@ -67,6 +71,11 @@ public class TaskTrackerAnnotationFactoryBean implements FactoryBean<TaskTracker
      * master节点变化监听器
      */
     private MasterChangeListener[] masterChangeListeners;
+
+    /**
+     * 只有当使用 JobDispatcher 的时候才有效果
+     */
+    private String shardField;
     /**
      * 额外参数配置
      */
@@ -98,7 +107,8 @@ public class TaskTrackerAnnotationFactoryBean implements FactoryBean<TaskTracker
                 StringUtils.format("jobRunnerClass should be implements {}.", JobRunner.class.getName()));
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public void afterPropertiesSet() throws Exception {
 
         checkProperties();
@@ -106,7 +116,7 @@ public class TaskTrackerAnnotationFactoryBean implements FactoryBean<TaskTracker
         taskTracker = new TaskTracker();
 
         taskTracker.setClusterName(clusterName);
-        taskTracker.setFailStorePath(failStorePath);
+        taskTracker.setDataPath(dataPath);
         taskTracker.setWorkThreads(workThreads);
         taskTracker.setNodeGroup(nodeGroup);
         taskTracker.setRegistryAddress(registryAddress);
@@ -148,7 +158,13 @@ public class TaskTrackerAnnotationFactoryBean implements FactoryBean<TaskTracker
         jobRunnerBeanName = "LTS_".concat(jobRunnerClass.getName());
         if (!beanFactory.containsBean(jobRunnerBeanName)) {
             BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(jobRunnerClass);
-            builder.setScope("prototype");
+            if (jobRunnerClass == JobDispatcher.class) {
+                builder.setScope("singleton");
+                builder.setLazyInit(false);
+                builder.getBeanDefinition().getPropertyValues().addPropertyValue("shardField", shardField);
+            } else {
+                builder.setScope("prototype");
+            }
             beanFactory.registerBeanDefinition(jobRunnerBeanName, builder.getBeanDefinition());
         }
     }
@@ -185,8 +201,8 @@ public class TaskTrackerAnnotationFactoryBean implements FactoryBean<TaskTracker
         this.registryAddress = registryAddress;
     }
 
-    public void setFailStorePath(String failStorePath) {
-        this.failStorePath = failStorePath;
+    public void setDataPath(String dataPath) {
+        this.dataPath = dataPath;
     }
 
     public void setWorkThreads(int workThreads) {
@@ -209,5 +225,9 @@ public class TaskTrackerAnnotationFactoryBean implements FactoryBean<TaskTracker
 
     public void setConfigs(Properties configs) {
         this.configs = configs;
+    }
+
+    public void setShardField(String shardField) {
+        this.shardField = shardField;
     }
 }

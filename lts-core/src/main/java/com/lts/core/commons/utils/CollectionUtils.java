@@ -1,9 +1,6 @@
 package com.lts.core.commons.utils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author Robert HG (254963746@qq.com) on 6/23/14.
@@ -13,11 +10,11 @@ public class CollectionUtils {
     private CollectionUtils() {
     }
 
-    public static boolean isNotEmpty(Map map) {
+    public static boolean isNotEmpty(Map<?,?> map) {
         return map != null && map.size() > 0;
     }
 
-    public static boolean isEmpty(Map map) {
+    public static boolean isEmpty(Map<?,?> map) {
         return !isNotEmpty(map);
     }
 
@@ -29,7 +26,7 @@ public class CollectionUtils {
         return !isNotEmpty(collection);
     }
 
-    public static int sizeOf(Collection collection) {
+    public static int sizeOf(Collection<?> collection) {
         if (isEmpty(collection)) {
             return 0;
         }
@@ -56,5 +53,12 @@ public class CollectionUtils {
             }
         }
         return list;
+    }
+
+    public static <T> List<T> setToList(Set<T> set){
+        if(set == null){
+            return null;
+        }
+        return new ArrayList<T>(set);
     }
 }

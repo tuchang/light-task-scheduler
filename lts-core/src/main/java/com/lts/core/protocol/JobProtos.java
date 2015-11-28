@@ -2,7 +2,7 @@ package com.lts.core.protocol;
 
 /**
  * @author Robert HG (254963746@qq.com) on 7/23/14.
- * 用于定义通信协议中的一些code
+ *         用于定义通信协议中的一些code
  */
 public class JobProtos {
 
@@ -19,14 +19,15 @@ public class JobProtos {
         // 分发任务
         PUSH_JOB(13),
         // 任务执行完成
-        JOB_FINISHED(14),
+        JOB_COMPLETED(14),
         // 询问任务
         JOB_ASK(15),
         // 请求推送任务
         JOB_PULL(16),
         // TaskTracker的业务日志
         BIZ_LOG_SEND(17),
-        ;
+        // 取消(删除)任务
+        CANCEL_JOB(18),;
 
         private int code;
 
@@ -74,9 +75,11 @@ public class JobProtos {
         // 任务推送
         JOB_PULL_SUCCESS(21),
         // 业务日志发送成功
-        BIZ_LOG_SEND_SUCCESS(22)
-
-        ;
+        BIZ_LOG_SEND_SUCCESS(22),
+        // 任务删除成功
+        JOB_CANCEL_SUCCESS(23),
+        // 任务删除失败
+        JOB_CANCEL_FAILED(24);
 
 
         private int code;

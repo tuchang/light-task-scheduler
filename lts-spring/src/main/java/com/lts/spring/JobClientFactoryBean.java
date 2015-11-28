@@ -4,8 +4,9 @@ import com.lts.core.commons.utils.Assert;
 import com.lts.core.listener.MasterChangeListener;
 import com.lts.jobclient.JobClient;
 import com.lts.jobclient.RetryJobClient;
-import com.lts.jobclient.support.JobFinishedHandler;
+import com.lts.jobclient.support.JobCompletedHandler;
 import com.lts.tasktracker.TaskTracker;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -17,10 +18,11 @@ import java.util.Properties;
  * JobClient Spring Bean 工厂类
  * @author Robert HG (254963746@qq.com) on 8/4/15.
  */
+@SuppressWarnings("rawtypes")
 public class JobClientFactoryBean implements FactoryBean<JobClient>,
         InitializingBean, DisposableBean {
 
-    private JobClient jobClient;
+	private JobClient jobClient;
     private boolean started;
     /**
      * 集群名称
@@ -37,7 +39,7 @@ public class JobClientFactoryBean implements FactoryBean<JobClient>,
     /**
      * 提交失败任务存储路径 , 默认用户木邻居
      */
-    private String failStorePath;
+    private String dataPath;
     /**
      * master节点变化监听器
      */
@@ -53,7 +55,7 @@ public class JobClientFactoryBean implements FactoryBean<JobClient>,
     /**
      * 任务完成处理接口
      */
-    private JobFinishedHandler jobFinishedHandler;
+    private JobCompletedHandler jobCompletedHandler;
 
     @Override
     public JobClient getObject() throws Exception {
@@ -88,12 +90,12 @@ public class JobClientFactoryBean implements FactoryBean<JobClient>,
         }
 
         jobClient.setClusterName(clusterName);
-        jobClient.setFailStorePath(failStorePath);
+        jobClient.setDataPath(dataPath);
         jobClient.setNodeGroup(nodeGroup);
         jobClient.setRegistryAddress(registryAddress);
 
-        if (jobFinishedHandler != null) {
-            jobClient.setJobFinishedHandler(jobFinishedHandler);
+        if (jobCompletedHandler != null) {
+            jobClient.setJobFinishedHandler(jobCompletedHandler);
         }
 
         // 设置config
@@ -135,8 +137,8 @@ public class JobClientFactoryBean implements FactoryBean<JobClient>,
         this.registryAddress = registryAddress;
     }
 
-    public void setFailStorePath(String failStorePath) {
-        this.failStorePath = failStorePath;
+    public void setDataPath(String dataPath) {
+        this.dataPath = dataPath;
     }
 
     public void setMasterChangeListeners(MasterChangeListener[] masterChangeListeners) {
@@ -147,8 +149,8 @@ public class JobClientFactoryBean implements FactoryBean<JobClient>,
         this.configs = configs;
     }
 
-    public void setJobFinishedHandler(JobFinishedHandler jobFinishedHandler) {
-        this.jobFinishedHandler = jobFinishedHandler;
+    public void setJobCompletedHandler(JobCompletedHandler jobCompletedHandler) {
+        this.jobCompletedHandler = jobCompletedHandler;
     }
 
     public void setType(String type) {

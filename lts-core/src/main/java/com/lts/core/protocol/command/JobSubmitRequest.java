@@ -9,9 +9,11 @@ import java.util.List;
  * @author Robert HG (254963746@qq.com) on 7/24/14.
  *         任务传递信息
  */
-public class JobSubmitRequest extends AbstractCommandBody {
+public class JobSubmitRequest extends AbstractRemotingCommandBody {
 
-    @NotNull
+	private static final long serialVersionUID = 7229438891247265777L;
+	
+	@NotNull
     private List<Job> jobs;
 
     public List<Job> getJobs() {

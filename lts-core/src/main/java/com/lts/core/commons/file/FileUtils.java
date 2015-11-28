@@ -48,6 +48,16 @@ public class FileUtils {
         return createTableSql.toString();
     }
 
+    public static String read(InputStream is, String encoding) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(is, encoding));
+        StringBuilder createTableSql = new StringBuilder();
+        String data = null;
+        while ((data = br.readLine()) != null) {
+            createTableSql.append(data);
+        }
+        return createTableSql.toString();
+    }
+
     public static void delete(File file) {
         if (!file.exists()) {
             return;

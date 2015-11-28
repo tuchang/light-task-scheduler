@@ -1,6 +1,6 @@
 package com.lts.jobclient;
 
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
 import com.lts.core.domain.Job;
 import com.lts.core.support.RetryScheduler;
 import com.lts.jobclient.domain.JobClientApplication;
@@ -9,7 +9,7 @@ import com.lts.jobclient.domain.Response;
 import com.lts.jobclient.domain.ResponseCode;
 import com.lts.jobclient.support.JobSubmitProtectException;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -18,17 +18,16 @@ import java.util.List;
  */
 public class RetryJobClient extends JobClient<JobClientNode, JobClientApplication> {
 
-    private RetryScheduler retryScheduler;
+    private RetryScheduler<Job> retryScheduler;
 
     @Override
-    protected void preRemotingStart() {
-
+    protected void beforeStart() {
+        super.beforeStart();
         retryScheduler = new RetryScheduler<Job>(application, 30) {
             @Override
             protected boolean isRemotingEnable() {
                 return isServerEnable();
             }
-
             @Override
             protected boolean retry(List<Job> jobs) {
                 try {
@@ -41,19 +40,18 @@ public class RetryJobClient extends JobClient<JobClientNode, JobClientApplicatio
             }
         };
         retryScheduler.setName(RetryJobClient.class.getSimpleName());
-        super.preRemotingStart();
         retryScheduler.start();
     }
 
     @Override
-    protected void preRemotingStop() {
-        super.preRemotingStop();
+    protected void beforeStop() {
+        super.beforeStop();
         retryScheduler.stop();
     }
 
     @Override
     public Response submitJob(Job job) {
-        return submitJob(Arrays.asList(job));
+        return submitJob(Collections.singletonList(job));
     }
 
     @Override
@@ -67,7 +65,7 @@ public class RetryJobClient extends JobClient<JobClientNode, JobClientApplicatio
             response.setFailedJobs(jobs);
             response.setCode(ResponseCode.SUBMIT_TOO_BUSY_AND_SAVE_FOR_LATER);
             response.setMsg(response.getMsg() + ", submit too busy , save local fail store and send later !");
-            LOGGER.warn(JSONUtils.toJSONString(response));
+            LOGGER.warn(JSON.toJSONString(response));
             return response;
         }
         if (!response.isSuccess()) {
@@ -78,7 +76,7 @@ public class RetryJobClient extends JobClient<JobClientNode, JobClientApplicatio
                 response.setSuccess(true);
                 response.setCode(ResponseCode.SUBMIT_FAILED_AND_SAVE_FOR_LATER);
                 response.setMsg(response.getMsg() + ", save local fail store and send later !");
-                LOGGER.warn(JSONUtils.toJSONString(response));
+                LOGGER.warn(JSON.toJSONString(response));
             } catch (Exception e) {
                 response.setSuccess(false);
                 response.setMsg(e.getMessage());

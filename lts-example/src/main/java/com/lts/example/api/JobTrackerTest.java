@@ -72,15 +72,21 @@ public class JobTrackerTest {
         // 任务队列用mysql
         jobTracker.addConfig("job.queue", "mysql");
         // mysql 配置
-         jobTracker.addConfig("jdbc.url", "jdbc:mysql://127.0.0.1:3306/lts3");
-         jobTracker.addConfig("jdbc.username", "root");
-         jobTracker.addConfig("jdbc.password", "root");
+        jobTracker.addConfig("jdbc.url", "jdbc:mysql://127.0.0.1:3306/lts");
+        jobTracker.addConfig("jdbc.username", "root");
+        jobTracker.addConfig("jdbc.password", "root");
+        // 可选值 mina netty
+//         jobTracker.addConfig("lts.remoting", "mina");
+        // 可选值 fastjson hessian2 java
+//         jobTracker.addConfig("lts.remoting.serializable.default", "fastjson");
+        // 延迟批量刷盘业务日志开关
+//        jobTracker.addConfig("lazy.job.logger", "true");
 
         jobTracker.setOldDataHandler(new OldDataDeletePolicy());
         // 设置 zk 客户端用哪个， 可选 zkclient, curator 默认是 zkclient
-//        jobTracker.addConfig("zk.client", "zkclient");
+//        jobTracker.addConfig("zk.client", "curator");
 
-        jobTracker.addConfig("lts.monitor.url", "http://localhost:8080/");
+        jobTracker.addConfig("lts.monitor.url", "http://localhost:8081/");
 
         // 启动节点
         jobTracker.start();

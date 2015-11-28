@@ -15,8 +15,8 @@ import com.lts.core.protocol.command.JobFinishedRequest;
 import com.lts.core.remoting.RemotingServerDelegate;
 import com.lts.jobtracker.domain.JobClientNode;
 import com.lts.jobtracker.domain.JobTrackerApplication;
-import com.lts.remoting.InvokeCallback;
-import com.lts.remoting.netty.ResponseFuture;
+import com.lts.remoting.AsyncCallback;
+import com.lts.remoting.ResponseFuture;
 import com.lts.remoting.protocol.RemotingCommand;
 
 import java.util.*;
@@ -26,10 +26,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Robert HG (254963746@qq.com) on 3/2/15.
  */
+@SuppressWarnings({"rawtypes","unchecked"})
 public class ClientNotifier {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientNotifier.class.getSimpleName());
-    private ClientNotifyHandler clientNotifyHandler;
+	private ClientNotifyHandler clientNotifyHandler;
     private JobTrackerApplication application;
 
     public ClientNotifier(JobTrackerApplication application, ClientNotifyHandler clientNotifyHandler) {
@@ -41,7 +42,7 @@ public class ClientNotifier {
      * 发送给客户端
      * @return 返回成功的个数
      */
-    public <T extends TaskTrackerJobResult> int send(List<T> jobResults) {
+	public <T extends TaskTrackerJobResult> int send(List<T> jobResults) {
         if (CollectionUtils.isEmpty(jobResults)) {
             return 0;
         }
@@ -105,12 +106,12 @@ public class ClientNotifier {
 
         JobFinishedRequest requestBody = application.getCommandBodyWrapper().wrapper(new JobFinishedRequest());
         requestBody.setJobResults(jobResults);
-        RemotingCommand commandRequest = RemotingCommand.createRequestCommand(JobProtos.RequestCode.JOB_FINISHED.code(), requestBody);
+        RemotingCommand commandRequest = RemotingCommand.createRequestCommand(JobProtos.RequestCode.JOB_COMPLETED.code(), requestBody);
 
         final Holder<Boolean> result = new Holder<Boolean>();
         try {
             final CountDownLatch latch = new CountDownLatch(1);
-            getRemotingServer().invokeAsync(jobClientNode.getChannel().getChannel(), commandRequest, new InvokeCallback() {
+            getRemotingServer().invokeAsync(jobClientNode.getChannel().getChannel(), commandRequest, new AsyncCallback() {
                 @Override
                 public void operationComplete(ResponseFuture responseFuture) {
                     try {

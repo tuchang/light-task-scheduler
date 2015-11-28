@@ -1,8 +1,8 @@
 package com.lts.core.cluster;
 
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.domain.Job;
+import com.lts.core.json.JSON;
 import com.lts.core.registry.NodeRegistryUtils;
-import com.lts.core.support.SystemClock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,19 +18,39 @@ public class Node {
     private String clusterName;
     private NodeType nodeType;
     private String ip;
-    private Integer port;
+    private Integer port = 0;
     private String hostName;
     private String group;
-    private Long createTime = SystemClock.now();
+    private Long createTime;
     // 线程个数
     private Integer threads;
     // 唯一标识
     private String identity;
+    // 命令端口
+    private Integer commandPort;
 
     // 自己关注的节点类型
     private List<NodeType> listenNodeTypes;
 
     private String fullString;
+
+    private Job job;
+
+    public Job getJob() {
+        return job;
+    }
+
+    public void setJob(Job job) {
+        this.job = job;
+    }
+
+    public Integer getCommandPort() {
+        return commandPort;
+    }
+
+    public void setCommandPort(Integer commandPort) {
+        this.commandPort = commandPort;
+    }
 
     public String getHostName() {
         return hostName;
@@ -156,6 +176,6 @@ public class Node {
 
     @Override
     public String toString() {
-        return JSONUtils.toJSONString(this);
+        return JSON.toJSONString(this);
     }
 }

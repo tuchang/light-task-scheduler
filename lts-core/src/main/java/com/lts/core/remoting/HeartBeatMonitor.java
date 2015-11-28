@@ -97,7 +97,7 @@ public class HeartBeatMonitor {
                                 }
                             }, 30, 30, TimeUnit.SECONDS);      // 30s 一次心跳
                 }
-                LOGGER.info("Start slow ping success.");
+                LOGGER.debug("Start slow ping success.");
             }
         } catch (Throwable t) {
             LOGGER.error("Start slow ping failed.", t);
@@ -110,7 +110,7 @@ public class HeartBeatMonitor {
 //                pingScheduledFuture.cancel(true);
 //                PING_EXECUTOR_SERVICE.shutdown();
                 application.getEventCenter().unSubscribe(EcTopic.NO_JOB_TRACKER_AVAILABLE, jobTrackerUnavailableEventSubscriber);
-                LOGGER.info("Stop slow ping success.");
+                LOGGER.debug("Stop slow ping success.");
             }
         } catch (Throwable t) {
             LOGGER.error("Stop slow ping failed.", t);
@@ -130,9 +130,9 @@ public class HeartBeatMonitor {
                                         ping();
                                     }
                                 }
-                            }, 1, 1, TimeUnit.MILLISECONDS);
+                            }, 500, 500, TimeUnit.MILLISECONDS);
                 }
-                LOGGER.info("Start fast ping success.");
+                LOGGER.debug("Start fast ping success.");
             } catch (Throwable t) {
                 LOGGER.error("Start fast ping failed.", t);
             }
@@ -144,7 +144,7 @@ public class HeartBeatMonitor {
             if (fastPingStart.compareAndSet(true, false)) {
 //                fastPingScheduledFuture.cancel(true);
 //                FAST_PING_EXECUTOR.shutdown();
-                LOGGER.info("Stop fast ping success.");
+                LOGGER.debug("Stop fast ping success.");
             }
         } catch (Throwable t) {
             LOGGER.error("Stop fast ping failed.", t);
@@ -164,7 +164,7 @@ public class HeartBeatMonitor {
                 }
             }
         } catch (Throwable t) {
-            LOGGER.error(t.getMessage(), t);
+            LOGGER.error("Ping JobTracker error", t);
         }
     }
 
@@ -197,9 +197,6 @@ public class HeartBeatMonitor {
 
     /**
      * 发送心跳
-     *
-     * @param remotingClient
-     * @param addr
      */
     private boolean beat(RemotingClientDelegate remotingClient, String addr) {
 
@@ -208,7 +205,7 @@ public class HeartBeatMonitor {
         RemotingCommand request = RemotingCommand.createRequestCommand(
                 JobProtos.RequestCode.HEART_BEAT.code(), commandBody);
         try {
-            RemotingCommand response = remotingClient.getNettyClient().invokeSync(addr, request, 5000);
+            RemotingCommand response = remotingClient.getRemotingClient().invokeSync(addr, request, 5000);
             if (response != null && JobProtos.ResponseCode.HEART_BEAT_SUCCESS ==
                     JobProtos.ResponseCode.valueOf(response.getCode())) {
                 if (LOGGER.isDebugEnabled()) {

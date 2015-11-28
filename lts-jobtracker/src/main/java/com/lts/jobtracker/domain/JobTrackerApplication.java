@@ -5,6 +5,8 @@ import com.lts.core.Application;
 import com.lts.core.remoting.RemotingServerDelegate;
 import com.lts.jobtracker.channel.ChannelManager;
 import com.lts.jobtracker.id.IdGenerator;
+import com.lts.jobtracker.sender.JobSender;
+import com.lts.jobtracker.support.JobReceiver;
 import com.lts.jobtracker.support.OldDataHandler;
 import com.lts.jobtracker.support.checker.ExecutingDeadJobChecker;
 import com.lts.jobtracker.support.cluster.JobClientManager;
@@ -47,6 +49,26 @@ public class JobTrackerApplication extends Application {
     private IdGenerator idGenerator;
 
     private PreLoader preLoader;
+
+    private JobReceiver jobReceiver;
+
+    private JobSender jobSender;
+
+    public JobSender getJobSender() {
+        return jobSender;
+    }
+
+    public void setJobSender(JobSender jobSender) {
+        this.jobSender = jobSender;
+    }
+
+    public JobReceiver getJobReceiver() {
+        return jobReceiver;
+    }
+
+    public void setJobReceiver(JobReceiver jobReceiver) {
+        this.jobReceiver = jobReceiver;
+    }
 
     public PreLoader getPreLoader() {
         return preLoader;

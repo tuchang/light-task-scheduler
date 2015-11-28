@@ -1,7 +1,6 @@
 package com.lts.queue.domain;
 
-import com.lts.core.commons.utils.JSONUtils;
-import com.lts.core.support.SystemClock;
+import com.lts.core.json.JSON;
 
 import java.util.Map;
 
@@ -24,7 +23,7 @@ public class JobPo {
      */
     private String taskId;
     // 创建时间
-    private Long gmtCreated = SystemClock.now();
+    private Long gmtCreated;
     // 修改时间
     private Long gmtModified;
     /**
@@ -184,6 +183,6 @@ public class JobPo {
 
     @Override
     public String toString() {
-        return JSONUtils.toJSONString(this);
+        return JSON.toJSONString(this);
     }
 }

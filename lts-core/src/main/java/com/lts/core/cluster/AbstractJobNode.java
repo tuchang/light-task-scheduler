@@ -3,6 +3,8 @@ package com.lts.core.cluster;
 import com.lts.core.Application;
 import com.lts.core.commons.utils.CollectionUtils;
 import com.lts.core.commons.utils.GenericsUtils;
+import com.lts.core.commons.utils.StringUtils;
+import com.lts.core.constant.Constants;
 import com.lts.core.extension.ExtensionLoader;
 import com.lts.core.factory.JobNodeConfigFactory;
 import com.lts.core.factory.NodeFactory;
@@ -15,6 +17,8 @@ import com.lts.core.logger.LoggerFactory;
 import com.lts.core.protocol.command.CommandBodyWrapper;
 import com.lts.core.registry.*;
 import com.lts.ec.EventCenterFactory;
+import com.lts.remoting.RemotingTransporter;
+import com.lts.remoting.serialize.AdaptiveSerializable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +38,10 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
     protected App application;
     private List<NodeChangeListener> nodeChangeListeners;
     private List<MasterChangeListener> masterChangeListeners;
-    private EventCenterFactory eventCenterFactory = ExtensionLoader.getExtensionLoader(EventCenterFactory.class).getAdaptiveExtension();
+    private EventCenterFactory eventCenterFactory = ExtensionLoader
+            .getExtensionLoader(EventCenterFactory.class).getAdaptiveExtension();
+    protected RemotingTransporter remotingTransporter = ExtensionLoader
+            .getExtensionLoader(RemotingTransporter.class).getAdaptiveExtension();
     private AtomicBoolean started = new AtomicBoolean(false);
 
     public AbstractJobNode() {
@@ -51,7 +58,7 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
                 // 初始化配置
                 initConfig();
 
-                preRemotingStart();
+                beforeRemotingStart();
 
                 remotingStart();
 
@@ -64,7 +71,11 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
                 LOGGER.info("Start success!");
             }
         } catch (Throwable e) {
-            LOGGER.error("Start failed!", e);
+            if (e.getMessage().contains("Address already in use")) {
+                LOGGER.error("Start failed at listen port {}!", config.getListenPort(), e);
+            } else {
+                LOGGER.error("Start failed!", e);
+            }
         }
     }
 
@@ -72,9 +83,11 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
         try {
             if (started.compareAndSet(true, false)) {
 
-                registry.unregister(node);
+                if (registry != null) {
+                    registry.unregister(node);
+                }
 
-                preRemotingStop();
+                beforeRemotingStop();
 
                 remotingStop();
 
@@ -98,16 +111,17 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
     }
 
     protected void initConfig() {
+        application.setEventCenter(eventCenterFactory.getEventCenter(config));
+
         application.setCommandBodyWrapper(new CommandBodyWrapper(config));
         application.setMasterElector(new MasterElector(application));
         application.getMasterElector().addMasterChangeListener(masterChangeListeners);
+        application.setRegistryStatMonitor(new RegistryStatMonitor(application));
 
         node = NodeFactory.create(getNodeClass(), config);
         config.setNodeType(node.getNodeType());
 
-        LOGGER.info("Current node config :{}", config);
-
-        application.setEventCenter(eventCenterFactory.getEventCenter(config));
+        LOGGER.info("Current Node config :{}", config);
 
         // 订阅的node管理
         SubscribedNodeManager subscribedNodeManager = new SubscribedNodeManager(application);
@@ -117,10 +131,16 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
         nodeChangeListeners.add(new MasterElectionListener(application));
         // 监听自己节点变化（如，当前节点被禁用了）
         nodeChangeListeners.add(new SelfChangeListener(application));
+
+        // 设置默认序列化方式
+        String defaultSerializable = config.getParameter(Constants.DEFAULT_REMOTING_SERIALIZABLE);
+        if (StringUtils.isNotEmpty(defaultSerializable)) {
+            AdaptiveSerializable.setDefaultSerializable(defaultSerializable);
+        }
     }
 
     private void initRegistry() {
-        registry = RegistryFactory.getRegistry(config);
+        registry = RegistryFactory.getRegistry(application);
         if (registry instanceof AbstractRegistry) {
             ((AbstractRegistry) registry).setNode(node);
         }
@@ -138,7 +158,7 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
                             try {
                                 listener.addNodes(nodes);
                             } catch (Throwable t) {
-                                NOTIFY_LOGGER.error("{} add nodes failed , cause: {}", listener.getClass(), t.getMessage(), t);
+                                NOTIFY_LOGGER.error("{} add nodes failed , cause: {}", listener.getClass().getName(), t.getMessage(), t);
                             }
                         }
                         break;
@@ -147,7 +167,7 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
                             try {
                                 listener.removeNodes(nodes);
                             } catch (Throwable t) {
-                                NOTIFY_LOGGER.error("{} remove nodes failed , cause: {}", listener.getClass(), t.getMessage(), t);
+                                NOTIFY_LOGGER.error("{} remove nodes failed , cause: {}", listener.getClass().getName(), t.getMessage(), t);
                             }
                         }
                         break;
@@ -160,17 +180,13 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
 
     protected abstract void remotingStop();
 
-    protected void preRemotingStart() {
-    }
+    protected abstract void beforeRemotingStart();
 
-    protected void afterRemotingStart() {
-    }
+    protected abstract void afterRemotingStart();
 
-    protected void preRemotingStop() {
-    }
+    protected abstract void beforeRemotingStop();
 
-    protected void afterRemotingStop() {
-    }
+    protected abstract void afterRemotingStop();
 
     @SuppressWarnings("unchecked")
     private App getApplication() {
@@ -214,6 +230,14 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
     }
 
     /**
+     * 节点标识(必须要保证这个标识是唯一的才能设置，请谨慎设置)
+     * 这个是非必须设置的，建议使用系统默认生成
+     */
+    public void setIdentity(String identity) {
+        config.setIdentity(identity);
+    }
+
+    /**
      * 添加节点监听器
      */
     public void addNodeChangeListener(NodeChangeListener notifyListener) {
@@ -228,6 +252,12 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
     public void addMasterChangeListener(MasterChangeListener masterChangeListener) {
         if (masterChangeListener != null) {
             masterChangeListeners.add(masterChangeListener);
+        }
+    }
+
+    public void setDataPath(String path) {
+        if (StringUtils.isNotEmpty(path)) {
+            config.setDataPath(path);
         }
     }
 

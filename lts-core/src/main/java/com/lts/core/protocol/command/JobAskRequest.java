@@ -7,9 +7,11 @@ import java.util.List;
 /**
  * @author Robert HG (254963746@qq.com)
  */
-public class JobAskRequest extends AbstractCommandBody {
+public class JobAskRequest extends AbstractRemotingCommandBody {
 
-    List<String> jobIds;
+	private static final long serialVersionUID = 1993281575847386175L;
+	
+	List<String> jobIds;
 
     public List<String> getJobIds() {
         return jobIds;

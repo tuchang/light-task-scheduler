@@ -13,6 +13,7 @@ import com.netflix.curator.framework.api.CuratorWatcher;
 import com.netflix.curator.framework.state.ConnectionState;
 import com.netflix.curator.framework.state.ConnectionStateListener;
 import com.netflix.curator.retry.RetryNTimes;
+
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
@@ -47,6 +48,8 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
                         CuratorZookeeperClient.this.stateChanged(StateListener.CONNECTED);
                     } else if (state == ConnectionState.RECONNECTED) {
                         CuratorZookeeperClient.this.stateChanged(StateListener.RECONNECTED);
+                    } else if(state == ConnectionState.SUSPENDED){
+                        CuratorZookeeperClient.this.stateChanged(StateListener.DISCONNECTED);
                     }
                 }
             });
@@ -174,7 +177,8 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
         }
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public <T> T getData(String path) {
         try {
             return (T) zkSerializer.deserialize(client.getData().forPath(path));
@@ -232,6 +236,9 @@ public class CuratorZookeeperClient extends AbstractZookeeperClient<CuratorWatch
         }
 
         public void process(WatchedEvent event) throws Exception {
+            if(event.getPath() == null){
+                return ;
+            }
             if (listener != null) {
                 listener.childChanged(event.getPath(), client.getChildren().usingWatcher(this).forPath(event.getPath()));
             }

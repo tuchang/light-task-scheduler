@@ -1,9 +1,8 @@
 package com.lts.example.benchmark;
 
-import com.lts.core.commons.utils.DateUtils;
 import com.lts.core.commons.utils.StringUtils;
 import com.lts.core.domain.Job;
-import com.lts.example.support.JobFinishedHandlerImpl;
+import com.lts.example.support.JobCompletedHandlerImpl;
 import com.lts.example.support.MasterChangeListenerImpl;
 import com.lts.example.support.MemoryStatus;
 import com.lts.jobclient.JobClient;
@@ -16,6 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author Robert HG (254963746@qq.com) on 8/13/15.
  */
+@SuppressWarnings("rawtypes")
 public class JobClientMain {
 
     public static void main(String[] args) {
@@ -25,13 +25,13 @@ public class JobClientMain {
         jobClient.setClusterName("test_cluster");
         jobClient.setRegistryAddress("zookeeper://127.0.0.1:2181");
         // jobClient.setRegistryAddress("redis://127.0.0.1:6379");
-        // 任务重试保存地址，默认用户目录下
-        // jobClient.setFailStorePath(Constants.USER_HOME);
+        // 数据保存地址，默认用户目录下
+        // jobClient.setData(Constants.USER_HOME);
         // 任务完成反馈接口
-        jobClient.setJobFinishedHandler(new JobFinishedHandlerImpl());
+        jobClient.setJobFinishedHandler(new JobCompletedHandlerImpl());
         // master 节点变化监听器，当有集群中只需要一个节点执行某个事情的时候，可以监听这个事件
         jobClient.addMasterChangeListener(new MasterChangeListenerImpl());
-        // 可选址  leveldb(默认), rocksdb, bekeleydb
+        // 可选址  leveldb(默认), rocksdb, berkeleydb
         // taskTracker.addConfig("job.fail.store", "leveldb");
         jobClient.addConfig("job.submit.concurrency.size", "100");
         jobClient.start();

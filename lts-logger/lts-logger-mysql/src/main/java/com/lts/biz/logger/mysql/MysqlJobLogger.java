@@ -1,6 +1,5 @@
 package com.lts.biz.logger.mysql;
 
-import com.alibaba.fastjson.TypeReference;
 import com.lts.biz.logger.JobLogException;
 import com.lts.biz.logger.JobLogger;
 import com.lts.biz.logger.domain.JobLogPo;
@@ -9,11 +8,13 @@ import com.lts.biz.logger.domain.LogType;
 import com.lts.core.cluster.Config;
 import com.lts.core.commons.file.FileUtils;
 import com.lts.core.commons.utils.CollectionUtils;
-import com.lts.core.commons.utils.JSONUtils;
+import com.lts.core.json.JSON;
+import com.lts.core.constant.Constants;
 import com.lts.core.constant.Level;
-import com.lts.web.response.PageResponse;
+import com.lts.core.json.TypeReference;
 import com.lts.store.jdbc.JdbcRepository;
 import com.lts.store.jdbc.SqlBuilder;
+import com.lts.web.response.PageResponse;
 import org.apache.commons.dbutils.ResultSetHandler;
 
 import java.io.IOException;
@@ -62,7 +63,7 @@ public class MysqlJobLogger extends JdbcRepository implements JobLogger {
                     jobLogPo.getPriority(),
                     jobLogPo.getSubmitNodeGroup(),
                     jobLogPo.getTaskTrackerNodeGroup(),
-                    JSONUtils.toJSONString(jobLogPo.getExtParams()),
+                    JSON.toJSONString(jobLogPo.getExtParams()),
                     jobLogPo.isNeedFeedback(),
                     jobLogPo.getCronExpression(),
                     jobLogPo.getTriggerTime(),
@@ -78,18 +79,7 @@ public class MysqlJobLogger extends JdbcRepository implements JobLogger {
         if (CollectionUtils.isEmpty(jobLogPos)) {
             return;
         }
-        String prefixSQL = "INSERT INTO `lts_job_log_po` ( `log_time`, `gmt_created`, `log_type`, `success`, `msg`" +
-                ",`task_tracker_identity`, `level`, `task_id`, `job_id`" +
-                ", `priority`, `submit_node_group`, `task_tracker_node_group`, `ext_params`, `need_feedback`" +
-                ", `cron_expression`, `trigger_time`, `retry_times`) VALUES ";
         int size = jobLogPos.size();
-        for (int i = 0; i < size; i++) {
-            if (i == size - 1) {
-                prefixSQL += "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-            } else {
-                prefixSQL += "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?),";
-            }
-        }
 
         Object[][] params = new Object[size][17];
         int index = 0;
@@ -107,7 +97,7 @@ public class MysqlJobLogger extends JdbcRepository implements JobLogger {
             params[i][9] = jobLogPo.getPriority();
             params[i][10] = jobLogPo.getSubmitNodeGroup();
             params[i][11] = jobLogPo.getTaskTrackerNodeGroup();
-            params[i][12] = JSONUtils.toJSONString(jobLogPo.getExtParams());
+            params[i][12] = JSON.toJSONString(jobLogPo.getExtParams());
             params[i][13] = jobLogPo.isNeedFeedback();
             params[i][14] = jobLogPo.getCronExpression();
             params[i][15] = jobLogPo.getTriggerTime();
@@ -115,7 +105,7 @@ public class MysqlJobLogger extends JdbcRepository implements JobLogger {
         }
 
         try {
-            getSqlTemplate().batchUpdate(prefixSQL, params);
+            getSqlTemplate().batchUpdate(insertSQL, params);
         } catch (SQLException e) {
             throw new JobLogException(e);
         }
@@ -139,8 +129,7 @@ public class MysqlJobLogger extends JdbcRepository implements JobLogger {
                 jobLogPo.setPriority(rs.getInt("priority"));
                 jobLogPo.setSubmitNodeGroup(rs.getString("submit_node_group"));
                 jobLogPo.setTaskTrackerNodeGroup(rs.getString("task_tracker_node_group"));
-                jobLogPo.setExtParams(JSONUtils.parse(rs.getString("ext_params"), new TypeReference<Map<String, String>>() {
-                }));
+                jobLogPo.setExtParams(JSON.parse(rs.getString("ext_params"), new TypeReference<Map<String, String>>(){}));
                 jobLogPo.setNeedFeedback(rs.getBoolean("need_feedback"));
                 jobLogPo.setCronExpression(rs.getString("cron_expression"));
                 jobLogPo.setTriggerTime(rs.getLong("trigger_time"));
@@ -197,7 +186,7 @@ public class MysqlJobLogger extends JdbcRepository implements JobLogger {
         // 创建表
         try {
             InputStream is = this.getClass().getClassLoader().getResourceAsStream("sql/lts_job_log_po.sql");
-            getSqlTemplate().update(FileUtils.read(is));
+            getSqlTemplate().update(FileUtils.read(is, Constants.CHARSET));
         } catch (SQLException e) {
             throw new JobLogException("create table error!", e);
         } catch (IOException e) {
