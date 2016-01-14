@@ -3,12 +3,11 @@ package com.lts.core.cluster;
 import com.lts.core.Application;
 import com.lts.core.commons.utils.CollectionUtils;
 import com.lts.core.commons.utils.GenericsUtils;
+import com.lts.core.commons.utils.NetUtils;
 import com.lts.core.commons.utils.StringUtils;
-import com.lts.core.compiler.support.AdaptiveCompiler;
-import com.lts.core.constant.Constants;
-import com.lts.core.extension.ExtensionLoader;
 import com.lts.core.factory.JobNodeConfigFactory;
 import com.lts.core.factory.NodeFactory;
+import com.lts.core.json.JSONFactory;
 import com.lts.core.listener.MasterChangeListener;
 import com.lts.core.listener.MasterElectionListener;
 import com.lts.core.listener.NodeChangeListener;
@@ -17,8 +16,9 @@ import com.lts.core.logger.Logger;
 import com.lts.core.logger.LoggerFactory;
 import com.lts.core.protocol.command.CommandBodyWrapper;
 import com.lts.core.registry.*;
-import com.lts.ec.EventCenterFactory;
-import com.lts.remoting.RemotingTransporter;
+import com.lts.core.spi.ServiceLoader;
+import com.lts.core.spi.SpiKey;
+import com.lts.ec.EventCenter;
 import com.lts.remoting.serialize.AdaptiveSerializable;
 
 import java.util.ArrayList;
@@ -39,10 +39,6 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
     protected App application;
     private List<NodeChangeListener> nodeChangeListeners;
     private List<MasterChangeListener> masterChangeListeners;
-    private EventCenterFactory eventCenterFactory = ExtensionLoader
-            .getExtensionLoader(EventCenterFactory.class).getAdaptiveExtension();
-    protected RemotingTransporter remotingTransporter = ExtensionLoader
-            .getExtensionLoader(RemotingTransporter.class).getAdaptiveExtension();
     private AtomicBoolean started = new AtomicBoolean(false);
 
     public AbstractJobNode() {
@@ -112,13 +108,16 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
     }
 
     protected void initConfig() {
-        application.setEventCenter(eventCenterFactory.getEventCenter(config));
+        application.setEventCenter(ServiceLoader.load(EventCenter.class, config));
 
         application.setCommandBodyWrapper(new CommandBodyWrapper(config));
         application.setMasterElector(new MasterElector(application));
         application.getMasterElector().addMasterChangeListener(masterChangeListeners);
         application.setRegistryStatMonitor(new RegistryStatMonitor(application));
 
+        if (StringUtils.isEmpty(config.getIp())) {
+            config.setIp(NetUtils.getLocalHost());
+        }
         node = NodeFactory.create(getNodeClass(), config);
         config.setNodeType(node.getNodeType());
 
@@ -138,15 +137,15 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
 
     private void setSpiConfig() {
         // 设置默认序列化方式
-        String defaultSerializable = config.getParameter(Constants.DEFAULT_REMOTING_SERIALIZABLE);
+        String defaultSerializable = config.getParameter(SpiKey.REMOTING_SERIALIZABLE_DFT);
         if (StringUtils.isNotEmpty(defaultSerializable)) {
             AdaptiveSerializable.setDefaultSerializable(defaultSerializable);
         }
 
-        // 设置编译器
-        String compiler = config.getParameter(Constants.COMPILER);
-        if (StringUtils.isNotEmpty(compiler)) {
-            AdaptiveCompiler.setDefaultCompiler(compiler);
+        // 设置json
+        String ltsJson = config.getParameter(SpiKey.LTS_JSON);
+        if (StringUtils.isNotEmpty(ltsJson)) {
+            JSONFactory.setJSONAdapter(ltsJson);
         }
     }
 
@@ -255,6 +254,18 @@ public abstract class AbstractJobNode<T extends Node, App extends Application> i
         if (notifyListener != null) {
             nodeChangeListeners.add(notifyListener);
         }
+    }
+
+    /**
+     * 显示设置绑定ip
+     */
+    public void setBindIp(String bindIp) {
+        if (StringUtils.isEmpty(bindIp)
+                || !NetUtils.isValidHost(bindIp)
+                ) {
+            throw new IllegalArgumentException("Invalided bind ip:" + bindIp);
+        }
+        config.setIp(bindIp);
     }
 
     /**

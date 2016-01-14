@@ -1,5 +1,6 @@
 package com.lts.example.api;
 
+import com.lts.core.spi.SpiKey;
 import com.lts.example.support.MasterChangeListenerImpl;
 import com.lts.jobtracker.JobTracker;
 import com.lts.jobtracker.support.policy.OldDataDeletePolicy;
@@ -75,6 +76,7 @@ public class JobTrackerTest {
         jobTracker.addConfig("jdbc.url", "jdbc:mysql://127.0.0.1:3306/lts");
         jobTracker.addConfig("jdbc.username", "root");
         jobTracker.addConfig("jdbc.password", "root");
+//        jobTracker.setBindIp("127.0.0.1");
         // 可选值 mina netty
 //         jobTracker.addConfig("lts.remoting", "mina");
         // 可选值 fastjson hessian2 java
@@ -87,6 +89,7 @@ public class JobTrackerTest {
 //        jobTracker.addConfig("zk.client", "curator");
 
         jobTracker.addConfig("lts.monitor.url", "http://localhost:8081/");
+//        jobTracker.addConfig(SpiKey.LTS_JSON, "ltsjson");
 
         // 启动节点
         jobTracker.start();

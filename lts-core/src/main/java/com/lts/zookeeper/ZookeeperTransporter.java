@@ -2,14 +2,12 @@ package com.lts.zookeeper;
 
 
 import com.lts.core.cluster.Config;
-import com.lts.core.constant.Constants;
-import com.lts.core.extension.Adaptive;
-import com.lts.core.extension.SPI;
+import com.lts.core.spi.SPI;
+import com.lts.core.spi.SpiKey;
 
-@SPI("zkclient")
+@SPI(key = SpiKey.ZK_CLIENT_KEY, dftValue = "zkclient")
 public interface ZookeeperTransporter {
 
-    @Adaptive({Constants.ZK_CLIENT_KEY})
     ZookeeperClient connect(Config config);
 
 }

@@ -2,13 +2,14 @@ package com.lts.web.controller.api;
 
 import com.lts.biz.logger.domain.JobLogPo;
 import com.lts.biz.logger.domain.JobLoggerRequest;
-import com.lts.command.Command;
-import com.lts.command.CommandClient;
-import com.lts.command.Commands;
+import com.lts.core.command.HttpCommand;
+import com.lts.core.command.HttpCommandClient;
+import com.lts.core.command.HttCommands;
 import com.lts.core.cluster.Node;
 import com.lts.core.cluster.NodeType;
 import com.lts.core.commons.utils.Assert;
 import com.lts.core.commons.utils.CollectionUtils;
+import com.lts.core.domain.KVPair;
 import com.lts.core.json.JSON;
 import com.lts.core.commons.utils.StringUtils;
 import com.lts.core.domain.Job;
@@ -16,7 +17,6 @@ import com.lts.core.logger.Logger;
 import com.lts.core.logger.LoggerFactory;
 import com.lts.core.support.CronExpression;
 import com.lts.queue.domain.JobPo;
-import com.lts.remoting.common.Pair;
 import com.lts.web.cluster.AdminApplication;
 import com.lts.web.controller.AbstractController;
 import com.lts.web.repository.memory.NodeMemoryDatabase;
@@ -242,9 +242,9 @@ public class JobQueueApiController extends AbstractController {
 
         String nodeGroup = request.getTaskTrackerNodeGroup();
 
-        Command command = new Command();
-        command.setCommand(Commands.LOAD_JOB);
-        command.addParam("nodeGroup", nodeGroup);
+        HttpCommand httpCommand = new HttpCommand();
+        httpCommand.setCommand(HttCommands.LOAD_JOB);
+        httpCommand.addParam("nodeGroup", nodeGroup);
 
         NodeRequest nodeRequest = new NodeRequest();
         nodeRequest.setNodeType(NodeType.JOB_TRACKER);
@@ -257,7 +257,7 @@ public class JobQueueApiController extends AbstractController {
 
         boolean success = false;
         for (Node node : jobTrackerNodeList) {
-            if(sendCommand(node.getIp(), node.getCommandPort(), command)){
+            if(sendCommand(node.getIp(), node.getCommandPort(), httpCommand)){
                 success = true;
             }
         }
@@ -304,13 +304,13 @@ public class JobQueueApiController extends AbstractController {
             return response;
         }
 
-        Pair<Boolean, String> pair = addJob(request);
-        response.setSuccess(pair.getObject1());
-        response.setMsg(pair.getObject2());
+        KVPair<Boolean, String> pair = addJob(request);
+        response.setSuccess(pair.getKey());
+        response.setMsg(pair.getValue());
         return response;
     }
 
-    private Pair<Boolean, String> addJob(JobQueueRequest request) {
+    private KVPair<Boolean, String> addJob(JobQueueRequest request) {
 
         Job job = new Job();
         job.setTaskId(request.getTaskId());
@@ -332,42 +332,42 @@ public class JobQueueApiController extends AbstractController {
         }
         job.setPriority(request.getPriority());
 
-        Command command = new Command();
-        command.setCommand(Commands.ADD_JOB);
-        command.addParam("job", JSON.toJSONString(job));
+        HttpCommand httpCommand = new HttpCommand();
+        httpCommand.setCommand(HttCommands.ADD_JOB);
+        httpCommand.addParam("job", JSON.toJSONString(job));
 
 
         NodeRequest nodeRequest = new NodeRequest();
         nodeRequest.setNodeType(NodeType.JOB_TRACKER);
         List<Node> jobTrackerNodeList = nodeMemoryDatabase.search(nodeRequest);
         if (CollectionUtils.isEmpty(jobTrackerNodeList)) {
-            return new Pair<Boolean, String>(false, "Can not found JobTracker.");
+            return new KVPair<Boolean, String>(false, "Can not found JobTracker.");
         }
 
         boolean success = false;
         for (Node node : jobTrackerNodeList) {
-            success = sendCommand(node.getIp(), node.getCommandPort(), command);
+            success = sendCommand(node.getIp(), node.getCommandPort(), httpCommand);
             if (success) {
                 break;
             }
         }
 
         if(!success){
-            return new Pair<Boolean, String>(false, "Can not found JobTracker.");
+            return new KVPair<Boolean, String>(false, "Can not found JobTracker.");
         }
 
-        String result = command.getResult();
+        String result = httpCommand.getResult();
         if ("true".equals(result)) {
-            return new Pair<Boolean, String>(true, "Add success");
+            return new KVPair<Boolean, String>(true, "Add success");
         }
-        return new Pair<Boolean, String>(false, result);
+        return new KVPair<Boolean, String>(false, result);
     }
 
-    private boolean sendCommand(String host, int port, Command command) {
+    private boolean sendCommand(String host, int port, HttpCommand httpCommand) {
         try {
-            CommandClient.sendCommand(host, port, command);
+            HttpCommandClient.sendCommand(host, port, httpCommand);
         } catch (Exception e) {
-            LOGGER.warn("send command[{}] error host:{}, port:{}", command.getCommand(), host, port);
+            LOGGER.warn("send command[{}] error host:{}, port:{}", httpCommand.getCommand(), host, port);
             return false;
         }
         return true;

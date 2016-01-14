@@ -62,12 +62,6 @@ public interface Constants {
 
     int DEFAULT_REGISTRY_RECONNECT_PERIOD = 3 * 1000;
 
-    String ZK_CLIENT_KEY = "zk.client";
-
-    String JOB_LOGGER_KEY = "job.logger";
-
-    String JOB_QUEUE_KEY = "job.queue";
-
     // 客户端提交并发请求size
     String JOB_SUBMIT_CONCURRENCY_SIZE = "job.submit.concurrency.size";
     int DEFAULT_JOB_SUBMIT_CONCURRENCY_SIZE = 100;
@@ -106,7 +100,6 @@ public interface Constants {
     // 延迟批量刷盘日志 检查频率
     String LAZY_JOB_LOGGER_CHECK_PERIOD = "lazy.job.logger.check.period";
 
-    String DEFAULT_REMOTING_SERIALIZABLE = "lts.remoting.serializable.default";
+    String ADAPTIVE = "adaptive";
 
-    String COMPILER = "lts.compiler";
 }

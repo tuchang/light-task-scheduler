@@ -1,11 +1,12 @@
 package com.lts.core.json;
 
 import com.lts.core.commons.utils.StringUtils;
-import com.lts.core.extension.ExtensionLoader;
 import com.lts.core.json.fastjson.FastJSONAdapter;
 import com.lts.core.json.jackson.JacksonJSONAdapter;
+import com.lts.core.json.ltsjson.LtsJSONAdapter;
 import com.lts.core.logger.Logger;
 import com.lts.core.logger.LoggerFactory;
+import com.lts.core.spi.ServiceLoader;
 
 /**
  * @author Robert HG (254963746@qq.com) on 11/19/15.
@@ -29,7 +30,11 @@ public class JSONFactory {
                 try {
                     setJSONAdapter(new JacksonJSONAdapter());
                 } catch (Throwable ignored2) {
-                    throw new JSONException("Please check JSON lib");
+                    try {
+                        setJSONAdapter(new LtsJSONAdapter());
+                    } catch (Throwable ignored3) {
+                        throw new JSONException("Please check JSON lib");
+                    }
                 }
             }
         }
@@ -37,7 +42,7 @@ public class JSONFactory {
 
     public static void setJSONAdapter(String jsonAdapter) {
         if (StringUtils.isNotEmpty(jsonAdapter)) {
-            setJSONAdapter(ExtensionLoader.getExtensionLoader(JSONAdapter.class).getExtension(jsonAdapter));
+            setJSONAdapter(ServiceLoader.load(JSONAdapter.class, jsonAdapter));
         }
     }
 
