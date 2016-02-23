@@ -1,6 +1,5 @@
 package com.lts.example.api;
 
-import com.lts.core.spi.SpiKey;
 import com.lts.example.support.MasterChangeListenerImpl;
 import com.lts.jobtracker.JobTracker;
 import com.lts.jobtracker.support.policy.OldDataDeletePolicy;
@@ -63,7 +62,7 @@ public class JobTrackerTest {
         // 节点信息配置
         jobTracker.setRegistryAddress("zookeeper://127.0.0.1:2181");
 //        jobTracker.setRegistryAddress("redis://127.0.0.1:6379");
-        jobTracker.setListenPort(35002); // 默认 35001
+        jobTracker.setListenPort(35001); // 默认 35001
         jobTracker.setClusterName("test_cluster");
 
         jobTracker.addMasterChangeListener(new MasterChangeListenerImpl());
@@ -78,7 +77,7 @@ public class JobTrackerTest {
         jobTracker.addConfig("jdbc.password", "root");
 //        jobTracker.setBindIp("127.0.0.1");
         // 可选值 mina netty
-//         jobTracker.addConfig("lts.remoting", "mina");
+         jobTracker.addConfig("lts.remoting", "netty");
         // 可选值 fastjson hessian2 java
 //         jobTracker.addConfig("lts.remoting.serializable.default", "fastjson");
         // 延迟批量刷盘业务日志开关
